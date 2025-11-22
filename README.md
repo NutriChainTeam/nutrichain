@@ -1,18 +1,16 @@
 # NutriChain
 
-NutriChain is an open-source blockchain project focused on sustainable nutrition management.  
-It features token staking, block mining, decentralized governance, and privacy tools such as ring signatures and stealth addresses.  
-Built with Python and a dynamic web interface, NutriChain promotes transparency and community involvement.
+NutriChain is an open-source blockchain project dedicated to sustainable nutrition management and traceability.  
+It integrates token staking, block mining, decentralized governance through DAO voting, and privacy features like ring signatures and stealth addresses.  
 
-## Getting Started
+## Features
 
-Instructions to install, configure, and run NutriChain locally.
+- Token staking and rewards  
+- Block mining with Proof of Work  
+- Privacy-enhanced transactions  
+- DAO-based governance model  
+- Python backend with dynamic web interface  
 
-## Contributing
+## Installation
 
-Please read [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines on how to contribute.
-
-## License
-
-This project is licensed under the MIT License.
-
+1. Clone the repository:  
