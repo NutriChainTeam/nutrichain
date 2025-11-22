@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriChain | Gouvernance DAO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Icônes Lucide -->
+    <script type="module" src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Fond sombre */
+            color: #e5e7eb;
+        }
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .progress-bar {
+            height: 10px;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col min-h-screen">
+
+    <!-- Contenu Principal -->
+    <div class="flex-grow">
+        <!-- En-tête de la DAO -->
+        <header class="mb-10 flex flex-col md:flex-row justify-between items-center border-b border-[#30363d] pb-6">
+            <h1 class="text-4xl font-extrabold text-white tracking-tight mb-4 md:mb-0">
+                NutriChain DAO <span class="text-sm text-gray-500 font-normal">| Propositions de Gouvernance</span>
+            </h1>
+            <div class="flex space-x-4">
+                <!-- Bouton Créer Proposition -->
+                <button id="createProposalBtn" class="bg-yellow-600 hover:bg-yellow-500 text-gray-900 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 flex items-center">
+                    <i data-lucide="plus-circle" class="w-5 h-5 mr-2"></i>
+                    Créer Proposition
+                </button>
+                <button id="connectWallet" class="bg-[#38bdf8] hover:bg-[#0ea5e9] text-gray-900 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 flex items-center">
+                    <i data-lucide="plug-zap" class="w-5 h-5 mr-2"></i>
+                    Connecter Wallet
+                </button>
+            </div>
+        </header>
+
+        <!-- Statut de l'utilisateur, Prix et Rendement -->
+        <section class="card p-6 rounded-xl mb-8 flex flex-col lg:flex-row justify-between items-center lg:space-x-8 space-y-4 lg:space-y-0">
+            
+            <!-- 1. Adresse Utilisateur -->
+            <div class="w-full lg:w-auto text-left">
+                <p class="text-gray-400">Votre Adresse :</p>
+                <p id="userAddress" class="font-mono text-sm text-yellow-400">Non Connecté</p>
+            </div>
+            
+            <!-- 2. Prix du Jeton (Bordure verticale) -->
+            <div class="text-center py-3 lg:py-0 border-y lg:border-y-0 lg:border-x border-gray-700 lg:px-8 w-full lg:w-auto">
+                <p class="text-gray-400">Prix NUTRI (USD) :</p>
+                <p id="nutriCoinPrice" class="text-2xl font-extrabold text-[#38bdf8]">
+                    <i data-lucide="loader" class="animate-spin w-5 h-5 inline-block mr-2"></i>
+                    Chargement...
+                </p>
+                <p id="nutriCoinSource" class="text-xs text-gray-500 mt-1"></p>
+            </div>
+
+            <!-- 3. Taux de Rendement Annuel (Bordure verticale) -->
+            <div class="text-center py-3 lg:py-0 border-y lg:border-y-0 lg:border-x border-gray-700 lg:px-8 w-full lg:w-auto">
+                <p class="text-gray-400">Taux de Rendement Annuel :</p>
+                <p id="annualYield" class="text-2xl font-extrabold text-green-500">7.25%</p>
+                <p class="text-xs text-gray-500 mt-1">(APY Simulé)</p>
+            </div>
+            
+            <!-- 4. Jetons Votants -->
+            <div class="text-right w-full lg:w-auto">
+                <p class="text-gray-400">Vos NUTRI Votants :</p>
+                <p id="userTokens" class="text-3xl font-extrabold text-white">0.00</p>
+            </div>
+        </section>
+
+        <!-- Nouvelle section: Métriques Globales -->
+        <section class="mb-8">
+            <div class="card p-4 rounded-xl flex justify-between items-center">
+                <p class="text-gray-400 flex items-center">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 mr-2 text-yellow-400"></i>
+                    Total des Propositions Soumises :
+                </p>
+                <p id="totalProposalsCount" class="text-2xl font-extrabold text-white">0</p>
+            </div>
+        </section>
+
+        <!-- Liste des Propositions en Cours -->
+        <section>
+            <h2 class="text-2xl font-bold mb-6 text-white flex items-center">
+                <i data-lucide="scale" class="w-6 h-6 mr-2 text-[#38bdf8]"></i>
+                Propositions Actives
+            </h2>
+
+            <!-- Message de Fallback/Erreur de Permission -->
+            <div id="fallback-error-message" class="hidden bg-red-800 bg-opacity-30 border-l-4 border-red-500 text-red-300 p-4 rounded-lg mb-6" role="alert">
+                <p class="font-bold">ERREUR DE CONNEXION FIRESTORE</p>
+                <p class="text-sm">Le chargement en temps réel a échoué (problème de permissions). Affichage des données statiques.</p>
+            </div>
+
+            <!-- Conteneur des Propositions -->
+            <div id="proposalsContainer" class="space-y-6">
+                <!-- Les cartes de proposition seront insérées ici par JavaScript -->
+                <div id="loading-message" class="text-center p-8 text-gray-500">
+                    Chargement des propositions...
+                </div>
+            </div>
+
+        </section>
+    </div>
+
+    <!-- Pied de page -->
+    <footer class="mt-12 pt-8 border-t border-[#30363d] text-gray-500 text-sm">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+            <p>&copy; 2024 NutriChain DAO. Tous droits réservés.</p>
+            
+            <div class="flex space-x-6">
+                <a href="#" class="hover:text-[#38bdf8] transition duration-200 flex items-center">
+                    <i data-lucide="book-open" class="w-4 h-4 mr-1"></i> Documentation
+                </a>
+                <a href="#" class="hover:text-[#38bdf8] transition duration-200 flex items-center">
+                    <i data-lucide="external-link" class="w-4 h-4 mr-1"></i> Contrat NUTRI
+                </a>
+                <a href="#" class="hover:text-[#38bdf8] transition duration-200 flex items-center">
+                    <i data-lucide="github" class="w-4 h-4 mr-1"></i> Code Source
+                </a>
+            </div>
+        </div>
+        <p class="text-xs text-center mt-4 text-red-400 bg-red-900 bg-opacity-20 p-2 rounded-lg">
+            Avertissement : Cette interface est une simulation. La participation à toute DAO comporte des risques financiers et expérimentaux.
+        </p>
+    </footer>
+    <!-- FIN Pied de page -->
+
+    <!-- Modal de Vote -->
+    <div id="voteModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center p-4" onclick="closeModal(event)">
+        <div class="card p-8 rounded-xl w-full max-w-lg" onclick="event.stopPropagation()">
+            <h3 id="modalTitle" class="text-2xl font-bold mb-4 text-white"></h3>
+            <p id="modalDescription" class="text-gray-400 mb-6"></p>
+            
+            <div class="space-y-4">
+                <button id="voteYes" class="w-full py-3 rounded-lg font-bold bg-green-600 hover:bg-green-700 transition duration-200 flex items-center justify-center">
+                    <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>
+                    Voter OUI
+                </button>
+                <button id="voteNo" class="w-full py-3 rounded-lg font-bold bg-red-600 hover:bg-red-700 transition duration-200 flex items-center justify-center">
+                    <i data-lucide="x-circle" class="w-5 h-5 mr-2"></i>
+                    Voter NON
+                </button>
+            </div>
+            <p id="voteStatus" class="mt-4 text-sm text-center text-yellow-400 hidden"></p>
+            <button class="mt-6 w-full py-2 text-gray-400 hover:text-white" onclick="document.getElementById('voteModal').classList.add('hidden')">Fermer</button>
+        </div>
+    </div>
+
+    <!-- Modal de Création de Proposition -->
+    <div id="createProposalModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center p-4" onclick="closeModal(event)">
+        <div class="card p-8 rounded-xl w-full max-w-xl" onclick="event.stopPropagation()">
+            <h3 class="text-2xl font-bold mb-4 text-white flex items-center">
+                <i data-lucide="send" class="w-6 h-6 mr-2"></i>
+                Soumettre une Nouvelle Proposition
+            </h3>
+            
+            <form id="proposalForm" class="space-y-4">
+                <div>
+                    <label for="proposalTitle" class="block text-sm font-medium text-gray-400 mb-1">Titre de la Proposition</label>
+                    <input type="text" id="proposalTitle" required 
+                           class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-[#38bdf8] focus:border-[#38bdf8]"
+                           placeholder="Ex: Mettre à jour le logo NutriChain">
+                </div>
+
+                <div>
+                    <label for="proposalDescription" class="block text-sm font-medium text-gray-400 mb-1">Description Détaillée</label>
+                    <textarea id="proposalDescription" required rows="4" 
+                              class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-[#38bdf8] focus:border-[#38bdf8]"
+                              placeholder="Expliquez l'objectif, les coûts et l'impact de cette proposition..."></textarea>
+                </div>
+
+                <div>
+                    <label for="proposalType" class="block text-sm font-medium text-gray-400 mb-1">Type de Proposition (affecte le Quorum)</label>
+                    <select id="proposalType" required 
+                            class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-[#38bdf8] focus:border-[#38bdf8]">
+                        <option value="PARTNERSHIP">PARTENARIAT / Opérations (Quorum 51%)</option>
+                        <option value="STRATEGY">STRATÉGIE / Trésorerie (Quorum 66.7%)</option>
+                    </select>
+                </div>
+
+                <button type="submit" id="submitProposalBtn" 
+                        class="w-full py-3 rounded-lg font-bold bg-[#38bdf8] hover:bg-[#0ea5e9] text-gray-900 transition duration-200 flex items-center justify-center">
+                    Soumettre
+                </button>
+                <p id="createProposalStatus" class="mt-4 text-sm text-center text-yellow-400 hidden"></p>
+            </form>
+
+            <button class="mt-6 w-full py-2 text-gray-400 hover:text-white" onclick="document.getElementById('createProposalModal').classList.add('hidden')">Annuler</button>
+        </div>
+    </div>
+
+
+    <!-- Firebase et Logique JavaScript -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Import des méthodes Firestore nécessaires
+        import { getFirestore, setLogLevel, doc, onSnapshot, collection, query, increment, runTransaction, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- CONSTANTES GLOBALES ET INITIALISATION DE L'ÉTAT ---
+        const QUORUM_STRATEGY = 0.667; 
+        const QUORUM_PARTNERSHIP = 0.51;
+        const TOTAL_VOTING_SUPPLY = 1000000;
+        const SIMULATED_APY = (Math.random() * (8.5 - 6.0) + 6.0).toFixed(2) + '%'; 
+
+        // État de l'application (Centralisé pour la clarté)
+        const appState = {
+            db: null,
+            auth: null,
+            userId: null,
+            userTokens: 0,
+            isAuthReady: false,
+            currentPropId: null,
+            proposals: [] // Les données des propositions chargées
+        };
+
+        // Configuration API et Firebase
+        const apiKey = ""; 
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let countdownTimerInterval = null; // Interval pour le compte à rebours
+
+        // Données initiales pour la démonstration
+        const initialProposals = [
+            { id: 'prop-1', title: "Approbation du Partenariat ONG: 'Secours Solidaire'", description: "Approuver 'Secours Solidaire' comme nouveau partenaire de distribution dans la région d'Île-de-France. Quorum requis: 51.0%", type: 'PARTNERSHIP', yesVotes: 250000, noVotes: 100000, hasVoted: false, endDate: getFutureDate(3.5) }, // 3.5 jours restants
+            { id: 'prop-2', title: "Changement de Stratégie: Intégrer Curve Finance", description: "Allouer 20% du FCI au pool de liquidité '3pool' de Curve pour diversifier le rendement. Quorum requis: 66.7%", type: 'STRATEGY', yesVotes: 400000, noVotes: 50000, hasVoted: false, endDate: getFutureDate(7) }, // 7 jours restants
+            { id: 'prop-3', title: "Ajustement du Coût du Repas à 5.50 €", description: "Mettre à jour le coût nominal du repas en raison de l'inflation alimentaire (+10%). Quorum requis: 51.0%", type: 'PARTNERSHIP', yesVotes: 550000, noVotes: 10000, hasVoted: false, endDate: getFutureDate(0.01) } // Quelques minutes restantes
+        ];
+
+        // --- Utilitaires de Temps et Affichage ---
+
+        // Utilité pour créer une date d'échéance (7 jours dans le futur)
+        function getFutureDate(days) {
+            const date = new Date();
+            date.setDate(date.getDate() + days);
+            return date.getTime();
+        }
+
+        // Formatte le temps restant
+        function formatTimeRemaining(ms) {
+            if (ms < 0) return '0j 0h 0m 0s';
+            const seconds = Math.floor((ms / 1000) % 60);
+            const minutes = Math.floor((ms / (1000 * 60)) % 60);
+            const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+            const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+            
+            return `${days}j ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        // Met à jour tous les comptes à rebours
+        function updateCountdownTimers() {
+            const now = new Date().getTime();
+            document.querySelectorAll('[data-end-date]').forEach(el => {
+                const endDate = parseInt(el.getAttribute('data-end-date'));
+                const timeRemaining = endDate - now;
+                const propId = el.getAttribute('data-prop-id');
+                const voteButton = document.querySelector(`.vote-button[data-prop-id="${propId}"]`);
+                const statusSpan = document.querySelector(`#prop-${propId} .proposal-status-span`);
+
+                if (timeRemaining > 0) {
+                    el.textContent = formatTimeRemaining(timeRemaining);
+                } else {
+                    el.textContent = 'TERMINÉE';
+                    // Désactiver le bouton de vote si le temps est écoulé
+                    if (voteButton && !voteButton.disabled) {
+                        voteButton.disabled = true;
+                        voteButton.textContent = 'Vote Terminé';
+                        voteButton.classList.remove('bg-[#38bdf8]', 'hover:bg-[#0ea5e9]');
+                        voteButton.classList.add('bg-gray-600', 'hover:bg-gray-500');
+                    }
+                    // Mettre à jour le statut final si ce n'est pas déjà fait par Firestore
+                    if (statusSpan && statusSpan.textContent.startsWith('EN COURS')) {
+                        statusSpan.textContent = 'TERMINÉE';
+                        statusSpan.classList.remove('bg-yellow-600');
+                        statusSpan.classList.add('bg-gray-600');
+                    }
+                }
+            });
+        }
+
+
+        // --- Utilitaires API (Prix du Jeton) ---
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function callGeminiApi(userQuery, systemPrompt, maxRetries = 3) {
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+            
+            const priceDisplay = document.getElementById('nutriCoinPrice');
+            const sourceDisplay = document.getElementById('nutriCoinSource');
+            
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const result = await response.json();
+                    const candidate = result.candidates?.[0];
+
+                    if (candidate && candidate.content?.parts?.[0]?.text) {
+                        const text = candidate.content.parts[0].text;
+                        
+                        let sources = [];
+                        const groundingMetadata = candidate.groundingMetadata;
+                        if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                            sources = groundingMetadata.groundingAttributions
+                                .map(attribution => ({
+                                    uri: attribution.web?.uri,
+                                    title: attribution.web?.title,
+                                }))
+                                .filter(source => source.uri && source.title);
+                        }
+
+                        if (sources.length > 0) {
+                            const firstSourceTitle = sources[0].title.length > 30 ? sources[0].title.substring(0, 30) + '...' : sources[0].title;
+                            sourceDisplay.innerHTML = `<a href="${sources[0].uri}" target="_blank" class="text-xs text-gray-500 hover:text-[#38bdf8]">${firstSourceTitle}</a>`;
+                        } else {
+                             sourceDisplay.textContent = 'Source non trouvée.';
+                        }
+
+                        return text;
+
+                    } else {
+                        throw new Error("Réponse de l'API mal formée ou vide.");
+                    }
+
+                } catch (error) {
+                    console.error(`Attempt ${attempt + 1} failed:`, error);
+                    if (attempt < maxRetries - 1) {
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await sleep(delay);
+                    } else {
+                        if (priceDisplay) priceDisplay.innerHTML = `<i data-lucide="alert-triangle" class="w-5 h-5 inline-block mr-1 text-red-500"></i> N/A`;
+                        if (sourceDisplay) sourceDisplay.textContent = 'Erreur de recherche.';
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                        return 'N/A';
+                    }
+                }
+            }
+        }
+
+        async function fetchNutriCoinPrice() {
+            const priceDisplay = document.getElementById('nutriCoinPrice');
+            const systemPrompt = "You are a specialized financial bot. Find the current price of the NutriCoin (NUTRI) token in USD using the search tool. Respond with only the price and currency symbol, e.g., '$0.1234'. Do not include any other text. If the price cannot be reliably found, respond with 'N/A'.";
+            const userQuery = "Current market price of NutriCoin (NUTRI) in USD.";
+            
+            if (priceDisplay) {
+                priceDisplay.innerHTML = `<i data-lucide="loader" class="animate-spin w-5 h-5 inline-block mr-2"></i> Chargement...`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+
+
+                const priceText = await callGeminiApi(userQuery, systemPrompt);
+
+                if (priceText && priceText !== 'N/A') {
+                    priceDisplay.textContent = priceText;
+                } else {
+                    priceDisplay.innerHTML = `<i data-lucide="alert-triangle" class="w-5 h-5 inline-block mr-1 text-red-500"></i> N/A`;
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+        
+        function displayAnnualYield() {
+            const annualYieldElement = document.getElementById('annualYield');
+            if (annualYieldElement) {
+                annualYieldElement.textContent = SIMULATED_APY;
+            }
+        }
+
+        // --- Initialisation Firebase et Authentification ---
+
+        function initializeFirebase() {
+            if (firebaseConfig && firebaseConfig.apiKey) {
+                try {
+                    app = initializeApp(firebaseConfig);
+                    appState.db = getFirestore(app);
+                    appState.auth = getAuth(app);
+                    setLogLevel('debug');
+                } catch (e) {
+                    console.error("Erreur lors de l'initialisation de Firebase:", e);
+                    return false;
+                }
+            } else {
+                console.warn("Configuration Firebase non disponible.");
+                return false;
+            }
+            return true;
+        }
+
+        const authenticate = async () => {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(appState.auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(appState.auth);
+                }
+            } catch (error) {
+                console.error("Erreur d'authentification Firebase:", error);
+            }
+        };
+
+        // Gère les changements d'état d'authentification et met à jour l'interface utilisateur
+        function setupAuthStateListener() {
+             if (!appState.auth) return;
+
+             onAuthStateChanged(appState.auth, (user) => {
+                appState.isAuthReady = true;
+                
+                // Masquer le message de chargement une fois que l'état d'auth est connu
+                const loadingMessage = document.getElementById('loading-message');
+                if (loadingMessage) {
+                    loadingMessage.classList.add('hidden');
+                }
+                
+                const userAddressElement = document.getElementById('userAddress');
+                const userTokensElement = document.getElementById('userTokens');
+                const walletBtn = document.getElementById('connectWallet');
+                const createPropBtn = document.getElementById('createProposalBtn');
+
+                if (user) {
+                    appState.userId = user.uid;
+                    if (userAddressElement) userAddressElement.textContent = appState.userId;
+                    
+                    // Simuler les jetons NUTRI votants
+                    appState.userTokens = Math.floor(Math.random() * 5000) + 100;
+                    if (userTokensElement) userTokensElement.textContent = new Intl.NumberFormat('fr-FR').format(appState.userTokens.toFixed(2));
+                    
+                    // Mise à jour de l'UI du wallet
+                    if (walletBtn) {
+                        walletBtn.textContent = 'Wallet Connecté';
+                        walletBtn.classList.remove('bg-[#38bdf8]', 'hover:bg-[#0ea5e9]');
+                        walletBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    }
+                    if (createPropBtn) createPropBtn.disabled = false;
+                    
+                    // Démarre l'écouteur Firestore si l'authentification est OK
+                    startDaoListener();
+
+                } else {
+                    // Utilisateur déconnecté ou anonyme sans ID
+                    appState.userId = null;
+                    appState.userTokens = 0;
+                    
+                    if (userAddressElement) userAddressElement.textContent = 'Anonyme / Non Connecté';
+                    if (userTokensElement) userTokensElement.textContent = '0.00';
+                    
+                    if (walletBtn) {
+                        walletBtn.textContent = 'Connecter Wallet';
+                        walletBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                        walletBtn.classList.add('bg-[#38bdf8]', 'hover:bg-[#0ea5e9]');
+                    }
+                    if (createPropBtn) createPropBtn.disabled = true;
+
+                    // Démarre l'écouteur Firestore même sans utilisateur spécifique (pour les données publiques)
+                    startDaoListener();
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            });
+        }
+
+        // --- Logique DAO (Fonctions Firestore et Rendu) ---
+
+        function startDaoListener() {
+            if (!appState.db || !appState.isAuthReady) {
+                // Si l'initialisation a échoué ou l'auth n'est pas prête, afficher le mode statique
+                return displayStaticProposals();
+            }
+
+            const proposalsCollectionPath = `/artifacts/${appId}/public/data/proposals`;
+            const q = query(collection(appState.db, proposalsCollectionPath));
+            
+            // Écoute en temps réel des changements
+            onSnapshot(q, (snapshot) => {
+                let proposals = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // Assurer que la proposition initiale est trouvée même si elle est statique
+                    const localProposal = appState.proposals.find(p => p.id === doc.id) || { hasVoted: false };
+                    proposals.push({ id: doc.id, ...data, hasVoted: localProposal.hasVoted });
+                });
+                
+                appState.proposals = proposals; // Met à jour l'état global
+                
+                const totalProposalsCount = document.getElementById('totalProposalsCount');
+                if (totalProposalsCount) {
+                    totalProposalsCount.textContent = appState.proposals.length;
+                }
+
+                // Initialisation des données si la collection est vide et qu'il n'y a pas d'erreur de cache
+                if (appState.proposals.length === 0 && snapshot.metadata.fromCache === false) {
+                    console.warn("Collection vide. Tentative d'initialisation des propositions.");
+                    initialProposals.forEach(prop => {
+                        setDoc(doc(appState.db, proposalsCollectionPath, prop.id), {
+                            title: prop.title,
+                            description: prop.description,
+                            type: prop.type,
+                            yesVotes: prop.yesVotes,
+                            noVotes: prop.noVotes,
+                            endDate: prop.endDate 
+                        }).catch(e => {
+                            console.error(`Erreur critique: Impossible d'initialiser la proposition ${prop.id}.`, e);
+                        });
+                    });
+                }
+                
+                const fallbackError = document.getElementById('fallback-error-message');
+                if (fallbackError) {
+                    fallbackError.classList.add('hidden');
+                }
+                renderProposals(appState.proposals);
+                
+            }, (error) => {
+                console.error("Erreur de l'écoute Firestore: Le problème est probablement lié aux règles de sécurité (Read/Lecture) pour le chemin public.", error);
+                displayStaticProposals();
+            });
+        }
+
+        function renderProposals(proposals) {
+            const container = document.getElementById('proposalsContainer');
+            if (!container) return; // Protection au cas où le DOM ne serait pas encore prêt
+            
+            container.innerHTML = '';
+            
+            // Nettoyer l'intervalle précédent
+            if (countdownTimerInterval) {
+                clearInterval(countdownTimerInterval);
+            }
+
+            proposals.forEach(prop => {
+                const totalVotes = prop.yesVotes + prop.noVotes;
+                const yesPercent = totalVotes > 0 ? (prop.yesVotes / totalVotes) * 100 : 0;
+                const noPercent = totalVotes > 0 ? (prop.noVotes / totalVotes) * 100 : 0;
+                
+                const quorumRate = prop.type === 'STRATEGY' ? QUORUM_STRATEGY : QUORUM_PARTNERSHIP;
+                const requiredQuorumVotes = TOTAL_VOTING_SUPPLY * quorumRate;
+                const quorumReached = totalVotes >= requiredQuorumVotes;
+                const passing = yesPercent > 50;
+                const proposalEnded = prop.endDate < new Date().getTime(); // Vérifie si la proposition est terminée
+
+                let statusColor = 'bg-yellow-600';
+                let statusText = 'EN COURS (Quorum : ' + (quorumRate * 100).toFixed(1) + '%)';
+                
+                if (proposalEnded) {
+                    if (passing && quorumReached) {
+                        statusColor = 'bg-green-600';
+                        statusText = 'APPROUVÉE';
+                    } else if (quorumReached) {
+                        statusColor = 'bg-red-600';
+                        statusText = 'REJETÉE (Quorum atteint)';
+                    } else {
+                        statusColor = 'bg-gray-600';
+                        statusText = 'TERMINÉE (Quorum non atteint)';
+                    }
+                } else if (passing && quorumReached) {
+                    statusColor = 'bg-green-600';
+                    statusText = 'EN COURS (Quorum atteint)';
+                }
+
+                const disableVote = prop.hasVoted || proposalEnded || appState.userTokens === 0;
+
+                const cardHtml = `
+                    <div id="prop-${prop.id}" class="card p-6 rounded-xl">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-xl font-bold text-[#38bdf8]">${prop.title}</h3>
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full proposal-status-span ${statusColor}">${statusText}</span>
+                        </div>
+                        
+                        <!-- Compte à Rebours -->
+                        <div class="mb-4 text-center p-2 rounded-lg ${proposalEnded ? 'bg-gray-800' : 'bg-gray-800 border-l-4 border-yellow-400'}">
+                             <p class="text-gray-400 text-sm">Temps restant :</p>
+                             <p data-end-date="${prop.endDate}" data-prop-id="${prop.id}" class="text-xl font-extrabold text-white countdown-timer">${proposalEnded ? 'TERMINÉE' : formatTimeRemaining(prop.endDate - new Date().getTime())}</p>
+                        </div>
+                        
+                        <p class="text-gray-400 mb-4">${prop.description}</p>
+                        
+                        <!-- Statistiques de Vote -->
+                        <div class="space-y-3 mb-6">
+                            <!-- OUI -->
+                            <div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-green-400">OUI (${yesPercent.toFixed(1)}%)</span>
+                                    <span class="text-white">${new Intl.NumberFormat('fr-FR').format(prop.yesVotes)} NUTRI</span>
+                                </div>
+                                <div class="progress-bar bg-gray-700 mt-1">
+                                    <div class="progress-bar bg-green-500" style="width: ${yesPercent}%;"></div>
+                                </div>
+                            </div>
+                            <!-- NON -->
+                            <div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-red-400">NON (${noPercent.toFixed(1)}%)</span>
+                                    <span class="text-white">${new Intl.NumberFormat('fr-FR').format(prop.noVotes)} NUTRI</span>
+                                </div>
+                                <div class="progress-bar bg-gray-700 mt-1">
+                                    <div class="progress-bar bg-red-500" style="width: ${noPercent}%;"></div>
+                                </div>
+                            </div>
+                            <!-- Quorum -->
+                            <div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-yellow-400">Total Voté (${(totalVotes / TOTAL_VOTING_SUPPLY * 100).toFixed(1)}% du Total)</span>
+                                    <span class="text-white">${new Intl.NumberFormat('fr-FR').format(totalVotes)} / ${new Intl.NumberFormat('fr-FR').format(requiredQuorumVotes)} NUTRI</span>
+                                </div>
+                                <div class="progress-bar bg-gray-700 mt-1">
+                                    <div class="progress-bar bg-yellow-500" style="width: ${Math.min(100, (totalVotes / requiredQuorumVotes) * 100)}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button data-prop-id="${prop.id}" data-title="${prop.title}" data-desc="${prop.description}" 
+                            class="vote-button w-full py-2 rounded-lg font-bold text-gray-900 transition duration-200 
+                            ${disableVote ? 'bg-gray-600 hover:bg-gray-500' : 'bg-[#38bdf8] hover:bg-[#0ea5e9]'}"
+                            ${disableVote ? 'disabled' : ''}>
+                            ${prop.hasVoted ? 'VOTÉ (Merci!)' : (appState.userTokens === 0 ? 'Jetons NUTRI requis' : (proposalEnded ? 'Vote Terminé' : 'Voter maintenant'))}
+                        </button>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+            attachVoteListeners();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Démarrer l'intervalle du compte à rebours
+            if (proposals.length > 0 && !countdownTimerInterval) {
+                countdownTimerInterval = setInterval(updateCountdownTimers, 1000);
+            }
+            updateCountdownTimers();
+        }
+
+        function displayStaticProposals() {
+            console.log("Affichage des propositions statiques (mode hors ligne DAO).");
+            const fallbackError = document.getElementById('fallback-error-message');
+            if (fallbackError) {
+                fallbackError.classList.remove('hidden');
+            }
+            const totalProposalsCount = document.getElementById('totalProposalsCount');
+            if (totalProposalsCount) {
+                totalProposalsCount.textContent = initialProposals.length;
+            }
+            appState.proposals = initialProposals; // Utilise les données statiques comme état actuel
+            renderProposals(initialProposals);
+        }
+
+        // --- Logique d'Interaction ---
+
+        function attachVoteListeners() {
+            document.querySelectorAll('.vote-button').forEach(button => {
+                button.onclick = (e) => {
+                    if (e.currentTarget.disabled) {
+                        const statusElement = document.getElementById('voteStatus');
+                         if (statusElement && appState.userTokens === 0) {
+                            statusElement.classList.remove('hidden', 'text-green-400');
+                            statusElement.classList.add('text-red-400');
+                            statusElement.textContent = `Vote impossible: Vous devez posséder des jetons NUTRI pour voter.`;
+                         }
+                         return;
+                    }
+                    const propId = e.currentTarget.getAttribute('data-prop-id');
+                    const title = e.currentTarget.getAttribute('data-title');
+                    const desc = e.currentTarget.getAttribute('data-desc');
+                    openVoteModal(propId, title, desc);
+                };
+            });
+        }
+        
+        document.getElementById('createProposalBtn').onclick = () => {
+            const createProposalModal = document.getElementById('createProposalModal');
+            const createProposalStatus = document.getElementById('createProposalStatus');
+            if (appState.userId && createProposalModal && createProposalStatus) {
+                createProposalModal.classList.remove('hidden');
+                createProposalStatus.classList.add('hidden');
+            } else {
+                // Afficher une alerte ou un message dans le UI si non connecté
+                console.warn('Veuillez vous connecter pour créer une proposition.');
+            }
+        };
+
+        const proposalForm = document.getElementById('proposalForm');
+        if (proposalForm) {
+            proposalForm.addEventListener('submit', handleCreateProposal);
+        }
+
+        async function handleCreateProposal(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('proposalTitle').value.trim();
+            const description = document.getElementById('proposalDescription').value.trim();
+            const type = document.getElementById('proposalType').value;
+            
+            const statusElement = document.getElementById('createProposalStatus');
+            if (!statusElement) return;
+
+            statusElement.classList.remove('hidden', 'text-red-400', 'text-green-400');
+            statusElement.classList.add('text-yellow-400');
+            statusElement.textContent = 'Soumission en cours...';
+
+            if (!appState.db || !appState.userId) {
+                statusElement.classList.remove('text-yellow-400');
+                statusElement.classList.add('text-red-400');
+                statusElement.textContent = `Erreur: Connexion requise pour soumettre.`;
+                return;
+            }
+
+            try {
+                const proposalsCollectionPath = `/artifacts/${appId}/public/data/proposals`;
+                
+                const newProposalData = {
+                    title: title,
+                    description: description,
+                    type: type,
+                    yesVotes: 0,
+                    noVotes: 0,
+                    endDate: getFutureDate(7), // Nouvelle proposition dure 7 jours
+                    createdBy: appState.userId // Ajout de l'ID de l'auteur
+                };
+                
+                await setDoc(doc(collection(appState.db, proposalsCollectionPath)), newProposalData);
+                
+                statusElement.classList.remove('text-yellow-400');
+                statusElement.classList.add('text-green-400');
+                statusElement.textContent = 'Proposition soumise avec succès ! Elle apparaît maintenant dans la liste.';
+
+                setTimeout(() => {
+                    const createProposalModal = document.getElementById('createProposalModal');
+                    if (document.getElementById('proposalForm')) document.getElementById('proposalForm').reset();
+                    if (createProposalModal) createProposalModal.classList.add('hidden');
+                    statusElement.classList.add('hidden');
+                }, 2000);
+
+            } catch (e) {
+                console.error("Erreur lors de la création de la proposition:", e);
+                statusElement.classList.remove('text-yellow-400', 'text-green-400');
+                statusElement.classList.add('text-red-400');
+                statusElement.textContent = `Échec de la soumission. Détail: ${e.message || e}`;
+            }
+        }
+
+
+        function openVoteModal(id, title, desc) {
+            appState.currentPropId = id;
+            const modalTitle = document.getElementById('modalTitle');
+            const modalDescription = document.getElementById('modalDescription');
+            const voteStatus = document.getElementById('voteStatus');
+            const voteYes = document.getElementById('voteYes');
+            const voteNo = document.getElementById('voteNo');
+            const voteButtons = [voteYes, voteNo].filter(btn => btn !== null);
+
+            if (modalTitle) modalTitle.textContent = title;
+            if (modalDescription) modalDescription.textContent = desc;
+            if (voteStatus) voteStatus.classList.add('hidden');
+            
+            // Logique pour désactiver si non connecté ou 0 jeton
+            if (!appState.userId || appState.userTokens <= 0) {
+                voteButtons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.textContent = 'Connectez votre wallet et possédez des NUTRI pour voter';
+                    btn.classList.remove('bg-green-600', 'bg-red-600');
+                    btn.classList.add('bg-gray-700');
+                });
+            } else {
+                voteButtons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.textContent = btn.id === 'voteYes' ? 'Voter OUI' : 'Voter NON';
+                    btn.classList.remove('bg-gray-700');
+                    btn.classList.add(btn.id === 'voteYes' ? 'bg-green-600' : 'bg-red-600');
+                });
+            }
+
+            const voteModal = document.getElementById('voteModal');
+            if (voteModal) voteModal.classList.remove('hidden');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function closeModal(event) {
+            if (event.target.id === 'voteModal' || event.target.id === 'createProposalModal') {
+                event.target.classList.add('hidden');
+            }
+        }
+
+        async function handleVote(voteType) {
+            if (!appState.userId || appState.userTokens <= 0 || !appState.currentPropId || !appState.db) {
+                const statusElement = document.getElementById('voteStatus');
+                if (statusElement) {
+                    statusElement.classList.remove('hidden', 'text-green-400');
+                    statusElement.classList.add('text-red-400');
+                    statusElement.textContent = `Vote impossible: Veuillez connecter votre portefeuille ou vérifier vos jetons NUTRI.`;
+                }
+                return;
+            }
+
+            const docRef = doc(appState.db, `/artifacts/${appId}/public/data/proposals`, appState.currentPropId);
+            const statusElement = document.getElementById('voteStatus');
+            if (!statusElement) return;
+
+            statusElement.classList.remove('hidden', 'text-red-400', 'text-green-400');
+            statusElement.classList.add('text-yellow-400');
+            statusElement.textContent = 'Transaction en cours...';
+
+            try {
+                // Marquer la proposition comme votée dans l'état local pour désactiver le bouton immédiatement
+                const proposalIndex = appState.proposals.findIndex(p => p.id === appState.currentPropId);
+                if (proposalIndex !== -1) {
+                    appState.proposals[proposalIndex].hasVoted = true;
+                }
+                
+                await runTransaction(appState.db, async (transaction) => {
+                    const sfDoc = await transaction.get(docRef);
+                    if (!sfDoc.exists()) {
+                        throw new Error("La proposition n'existe pas ou n'est pas accessible.");
+                    }
+
+                    const fieldToUpdate = voteType === 'yes' ? 'yesVotes' : 'noVotes';
+
+                    transaction.update(docRef, {
+                        [fieldToUpdate]: increment(appState.userTokens)
+                    });
+                    
+                    statusElement.classList.remove('text-yellow-400');
+                    statusElement.classList.add('text-green-400');
+                    statusElement.textContent = `Vote enregistré : ${new Intl.NumberFormat('fr-FR').format(appState.userTokens.toFixed(2))} NUTRI pour ${voteType === 'yes' ? 'OUI' : 'NON'}.`;
+                });
+
+                // Re-rendre pour mettre à jour l'état du bouton et les barres de progression
+                renderProposals(appState.proposals);
+            } catch (e) {
+                console.error("Échec de la transaction de vote:", e);
+                // Annuler l'état local 'hasVoted' si la transaction échoue
+                const proposalIndex = appState.proposals.findIndex(p => p.id === appState.currentPropId);
+                if (proposalIndex !== -1) {
+                    appState.proposals[proposalIndex].hasVoted = false;
+                }
+                
+                statusElement.classList.remove('text-yellow-400', 'text-green-400');
+                statusElement.classList.add('text-red-400');
+                if (e.message && e.message.includes('permission')) {
+                     statusElement.textContent = `ERREUR DE PERMISSION: Impossible d'écrire dans la base de données.`;
+                } else {
+                     statusElement.textContent = `Erreur de vote. Détail: ${e.message || e}`;
+                }
+                
+                renderProposals(appState.proposals); // Re-rendre pour restaurer l'état du bouton
+            }
+            // Pas besoin d'appeler startDaoListener ici, onSnapshot s'en chargera
+        }
+        
+        const voteYesElement = document.getElementById('voteYes');
+        const voteNoElement = document.getElementById('voteNo');
+        const connectWalletElement = document.getElementById('connectWallet');
+        
+        if(voteYesElement) voteYesElement.onclick = () => handleVote('yes');
+        if(voteNoElement) voteNoElement.onclick = () => handleVote('no');
+        
+        if(connectWalletElement) {
+            connectWalletElement.onclick = () => { 
+                if (!appState.userId && appState.auth) {
+                    signInAnonymously(appState.auth);
+                } else {
+                    console.log('Portefeuille déjà connecté sous l\'ID : ' + appState.userId);
+                }
+            };
+        }
+
+
+        // --- DÉMARRAGE DE L'APPLICATION ---
+        window.onload = () => {
+            if (initializeFirebase()) {
+                setupAuthStateListener();
+                authenticate();
+            } else {
+                 // Si Firebase n'a pas pu être initialisé (config manquante), on va directement au mode statique
+                appState.isAuthReady = true;
+                displayStaticProposals();
+            }
+            
+            fetchNutriCoinPrice();
+            displayAnnualYield(); 
+            
+            // S'assurer que les icônes lucide sont créées une fois que tout le DOM est chargé
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        };
+
+    </script>
+</body>
+</html>

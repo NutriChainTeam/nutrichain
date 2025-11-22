@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriChain | Blockchain Humanitaire Complète</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #e5e7eb;
+        }
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .progress-bar {
+            height: 10px;
+            border-radius: 9999px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        .timer-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .tab-active {
+            border-bottom: 3px solid #22c55e;
+            color: #22c55e;
+        }
+        .notification {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        #map { height: 400px; }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; }
+        .badge-silver { background: linear-gradient(135deg, #e5e7eb, #9ca3af); color: #000; }
+        .badge-bronze { background: linear-gradient(135deg, #d97706, #92400e); color: #fff; }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+                    🍽️ NutriChain
+                </h1>
+                <p class="text-gray-400 mt-2" data-i18n="tagline">Blockchain Humanitaire Complète</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- Notifications -->
+                <button id="notifBtn" class="card px-3 py-2 rounded-lg hover:bg-gray-800 transition relative">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span id="notifBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                </button>
+
+                <!-- Langue -->
+                <select id="languageSelector" class="card px-4 py-2 rounded-lg text-sm hover:bg-gray-800 transition cursor-pointer">
+                    <option value="fr">🇫🇷 FR</option>
+                    <option value="en">🇬🇧 EN</option>
+                    <option value="es">🇪🇸 ES</option>
+                </select>
+
+                <!-- Créer Proposition -->
+                <button id="openModalBtn" class="btn-primary px-4 py-2 rounded-lg hover:opacity-90 transition flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span data-i18n="createProposal">Créer</span>
+                </button>
+
+                <!-- Wallet / MetaMask -->
+                <button id="connectWallet" class="card px-6 py-3 rounded-lg hover:bg-gray-800 transition">
+                    <span class="flex items-center gap-2">
+                        <i data-lucide="wallet" class="w-5 h-5"></i>
+                        <span id="walletStatus" data-i18n="connectWallet">Connecter</span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="card rounded-lg mb-6 p-2">
+        <div class="flex gap-2 flex-wrap">
+            <button class="tab-btn tab-active px-6 py-3 rounded-lg hover:bg-gray-800 transition" data-tab="dashboard">
+                <i data-lucide="layout-dashboard" class="w-4 h-4 inline mr-2"></i>
+                <span data-i18n="dashboard">Dashboard</span>
+            </button>
+            <button class="tab-btn px-6 py-3 rounded-lg hover:bg-gray-800 transition" data-tab="dao">
+                <i data-lucide="vote" class="w-4 h-4 inline mr-2"></i>
+                <span data-i18n="governance">Gouvernance</span>
+            </button>
+            <button class="tab-btn px-6 py-3 rounded-lg hover:bg-gray-800 transition" data-tab="impact">
+                <i data-lucide="globe" class="w-4 h-4 inline mr-2"></i>
+                <span data-i18n="impact">Impact</span>
+            </button>
+            <button class="tab-btn px-6 py-3 rounded-lg hover:bg-gray-800 transition" data-tab="history">
+                <i data-lucide="history" class="w-4 h-4 inline mr-2"></i>
+                <span data-i18n="history">Historique</span>
+            </button>
+            <button class="tab-btn px-6 py-3 rounded-lg hover:bg-gray-800 transition" data-tab="profile">
+                <i data-lucide="user" class="w-4 h-4 inline mr-2"></i>
+                <span data-i18n="profile">Profil</span>
+            </button>
+            <button class="tab-btn px-6 py-3 rounded-lg hover:bg-gray-800 transition" data-tab="docs">
+                <i data-lucide="book-open" class="w-4 h-4 inline mr-2"></i>
+                <span data-i18n="docs">Docs</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- TAB: Dashboard -->
+    <div id="tab-dashboard" class="tab-content">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="card p-6 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm" data-i18n="yourAddress">Votre Adresse</p>
+                        <p class="text-xl font-bold mt-1" id="userAddress">Non Connecté</p>
+                    </div>
+                    <i data-lucide="user" class="w-10 h-10 text-blue-400"></i>
+                </div>
+            </div>
+            <div class="card p-6 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Prix NUTRI</p>
+                        <p class="text-2xl font-bold mt-1 text-green-400" id="nutriPrice">$1.00</p>
+                    </div>
+                    <i data-lucide="dollar-sign" class="w-10 h-10 text-green-400"></i>
+                </div>
+            </div>
+            <div class="card p-6 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">APY</p>
+                        <p class="text-2xl font-bold mt-1 text-yellow-400" id="apy">7.25%</p>
+                    </div>
+                    <i data-lucide="trending-up" class="w-10 h-10 text-yellow-400"></i>
+                </div>
+            </div>
+            <div class="card p-6 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Vos NUTRI</p>
+                        <p class="text-2xl font-bold mt-1 text-purple-400" id="userBalance">0.00</p>
+                    </div>
+                    <i data-lucide="coins" class="w-10 h-10 text-purple-400"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Impact Quick View -->
+        <div class="card p-8 rounded-lg mb-8">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                <i data-lucide="heart" class="w-6 h-6 text-red-400"></i>
+                Impact Humanitaire en Temps Réel
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div>
+                    <p class="text-5xl font-bold text-green-400" id="mealsServed">1,247</p>
+                    <p class="text-gray-400 mt-2">Repas Distribués</p>
+                </div>
+                <div>
+                    <p class="text-5xl font-bold text-blue-400" id="peopleFed">892</p>
+                    <p class="text-gray-400 mt-2">Personnes Nourries</p>
+                </div>
+                <div>
+                    <p class="text-5xl font-bold text-purple-400" id="countries">5</p>
+                    <p class="text-gray-400 mt-2">Pays Couverts</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staking -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card p-6 rounded-lg">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="arrow-down-circle" class="w-5 h-5 text-green-400"></i>
+                    Staker USDT → NUTRICOIN
+                </h3>
+                <form id="stakeForm">
+                    <div class="mb-4">
+                        <label class="text-gray-400 text-sm">Montant USDT</label>
+                        <input type="number" id="stakeAmount" 
+                               class="w-full mt-2 px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 focus:border-green-500 focus:outline-none" 
+                               placeholder="100" min="10" step="0.01">
+                    </div>
+                    <div class="bg-blue-900/30 border border-blue-700 rounded-lg p-4 mb-4">
+                        <p class="text-sm">Vous recevrez: <span class="font-bold text-green-400" id="nutriToReceive">0</span> NUTRICOIN</p>
+                        <p class="text-sm">Intérêts annuels: <span class="font-bold text-yellow-400" id="yearlyInterest">0</span> NUTRICOIN</p>
+                    </div>
+                    <button type="submit" class="w-full btn-primary text-white font-bold py-3 rounded-lg">
+                        Staker Maintenant
+                    </button>
+                </form>
+            </div>
+
+            <div class="card p-6 rounded-lg">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="arrow-up-circle" class="w-5 h-5 text-yellow-400"></i>
+                    Retirer vos NUTRICOIN
+                </h3>
+                <form id="withdrawForm">
+                    <div class="mb-4">
+                        <label class="text-gray-400 text-sm">Montant à retirer</label>
+                        <input type="number" id="withdrawAmount" 
+                               class="w-full mt-2 px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 focus:border-yellow-500 focus:outline-none" 
+                               placeholder="50" min="1" step="0.01">
+                    </div>
+                    <div class="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4 mb-4">
+                        <p class="text-sm">Vous recevrez: <span class="font-bold text-yellow-400" id="usdtToReceive">0</span> USDT</p>
+                    </div>
+                    <button type="submit" class="w-full bg-yellow-500 text-black font-bold py-3 rounded-lg">
+                        Retirer en USDT
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: DAO/Gouvernance -->
+    <div id="tab-dao" class="tab-content hidden">
+        <div class="mb-6 flex gap-4">
+            <input type="text" id="searchProposals" placeholder="🔍 Rechercher une proposition..." 
+                   class="flex-1 px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 focus:border-green-500 focus:outline-none">
+            <select id="filterProposals" class="card px-4 py-3 rounded-lg">
+                <option value="all">Toutes</option>
+                <option value="active">Actives</option>
+                <option value="ended">Terminées</option>
+                <option value="approved">Approuvées (>70%)</option>
+            </select>
+        </div>
+
+        <div class="card p-6 rounded-lg">
+            <h3 class="text-xl font-bold mb-4">Propositions</h3>
+            <div id="proposalsContainer"></div>
+        </div>
+    </div>
+
+    <!-- TAB: Impact -->
+    <div id="tab-impact" class="tab-content hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="card p-6 rounded-lg">
+                <h3 class="text-xl font-bold mb-4">Évolution des Repas Distribués</h3>
+                <canvas id="mealsChart"></canvas>
+            </div>
+            <div class="card p-6 rounded-lg">
+                <h3 class="text-xl font-bold mb-4">Distribution par Pays</h3>
+                <canvas id="countriesChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card p-6 rounded-lg mb-6">
+            <h3 class="text-xl font-bold mb-4">Carte Mondiale des Distributions</h3>
+            <div id="map"></div>
+        </div>
+
+        <div class="card p-6 rounded-lg">
+            <h3 class="text-xl font-bold mb-4">Preuves d'Impact</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <img src="https://via.placeholder.com/300x200?text=Distribution+Haiti" class="w-full rounded mb-2">
+                    <p class="text-sm font-semibold">Distribution en Haïti</p>
+                    <p class="text-xs text-gray-400">500 repas • 15 nov 2025</p>
+                </div>
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <img src="https://via.placeholder.com/300x200?text=Ecole+Senegal" class="w-full rounded mb-2">
+                    <p class="text-sm font-semibold">Cantine Scolaire Sénégal</p>
+                    <p class="text-xs text-gray-400">300 enfants • 10 nov 2025</p>
+                </div>
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <img src="https://via.placeholder.com/300x200?text=Camp+Mali" class="w-full rounded mb-2">
+                    <p class="text-sm font-semibold">Camp de Réfugiés Mali</p>
+                    <p class="text-xs text-gray-400">450 repas • 5 nov 2025</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: Historique -->
+    <div id="tab-history" class="tab-content hidden">
+        <div class="card p-6 rounded-lg mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Historique des Transactions</h3>
+                <button id="exportCSV" class="btn-primary px-4 py-2 rounded-lg text-sm">
+                    <i data-lucide="download" class="w-4 h-4 inline mr-2"></i>
+                    Exporter CSV
+                </button>
+            </div>
+            <div id="transactionsHistory"></div>
+        </div>
+
+        <div class="card p-6 rounded-lg">
+            <h3 class="text-xl font-bold mb-4">Historique des Votes</h3>
+            <div id="votesHistory"></div>
+        </div>
+    </div>
+
+    <!-- TAB: Profil -->
+    <div id="tab-profile" class="tab-content hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="card p-6 rounded-lg">
+                <div class="text-center">
+                    <div class="w-24 h-24 bg-gradient-to-br from-green-400 to-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl">
+                        👤
+                    </div>
+                    <h3 class="text-xl font-bold" id="profileAddress">Non connecté</h3>
+                    <p class="text-gray-400 text-sm mt-1">Membre depuis aujourd'hui</p>
+                </div>
+            </div>
+
+            <div class="card p-6 rounded-lg col-span-2">
+                <h3 class="text-xl font-bold mb-4">Statistiques Personnelles</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-900 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">Total Staké</p>
+                        <p class="text-2xl font-bold text-green-400" id="profileStaked">0 USDT</p>
+                    </div>
+                    <div class="bg-gray-900 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">Votes Effectués</p>
+                        <p class="text-2xl font-bold text-purple-400" id="profileVotes">0</p>
+                    </div>
+                    <div class="bg-gray-900 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">Propositions Créées</p>
+                        <p class="text-2xl font-bold text-blue-400" id="profileProposals">0</p>
+                    </div>
+                    <div class="bg-gray-900 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">Repas Financés</p>
+                        <p class="text-2xl font-bold text-red-400" id="profileMeals">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6 rounded-lg mt-6">
+            <h3 class="text-xl font-bold mb-4">Vos Badges</h3>
+            <div class="flex gap-4 flex-wrap">
+                <div class="badge badge-gold">🥇 Premier Stakeur</div>
+                <div class="badge badge-silver">🗳️ Voteur Actif (10+ votes)</div>
+                <div class="badge badge-bronze">💚 Contributeur Humanitaire</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: Documentation -->
+    <div id="tab-docs" class="tab-content hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card p-6 rounded-lg">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="book" class="w-5 h-5 text-blue-400"></i>
+                    Whitepaper
+                </h3>
+                <p class="text-gray-400 mb-4">
+                    NutriChain est une blockchain humanitaire qui utilise le staking de cryptomonnaies 
+                    pour financer des repas dans le monde entier.
+                </p>
+                <button class="btn-primary px-4 py-2 rounded-lg">
+                    <i data-lucide="download" class="w-4 h-4 inline mr-2"></i>
+                    Télécharger le Whitepaper
+                </button>
+            </div>
+
+            <div class="card p-6 rounded-lg">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="help-circle" class="w-5 h-5 text-green-400"></i>
+                    FAQ
+                </h3>
+                <div class="space-y-3">
+                    <details class="bg-gray-900 p-3 rounded-lg">
+                        <summary class="cursor-pointer font-semibold">Comment fonctionne le staking ?</summary>
+                        <p class="text-gray-400 text-sm mt-2">
+                            Vous déposez des USDT, recevez des NUTRICOIN en échange, et gagnez 7.25% d'intérêts annuels.
+                        </p>
+                    </details>
+                    <details class="bg-gray-900 p-3 rounded-lg">
+                        <summary class="cursor-pointer font-semibold">Comment sont financés les repas ?</summary>
+                        <p class="text-gray-400 text-sm mt-2">
+                            Une partie des intérêts générés finance automatiquement les projets humanitaires votés par la communauté.
+                        </p>
+                    </details>
+                    <details class="bg-gray-900 p-3 rounded-lg">
+                        <summary class="cursor-pointer font-semibold">Puis-je retirer mes fonds à tout moment ?</summary>
+                        <p class="text-gray-400 text-sm mt-2">
+                            Oui, vous pouvez retirer vos NUTRICOIN contre USDT à tout moment.
+                        </p>
+                    </details>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6 rounded-lg mt-6">
+            <h3 class="text-xl font-bold mb-4">Guide d'Utilisation</h3>
+            <ol class="list-decimal list-inside space-y-2 text-gray-400">
+                <li>Connectez votre wallet MetaMask ou créez-en un nouveau</li>
+                <li>Stakez des USDT pour recevoir des NUTRICOIN</li>
+                <li>Votez sur les propositions humanitaires</li>
+                <li>Suivez l'impact de vos contributions en temps réel</li>
+                <li>Retirez vos fonds quand vous le souhaitez</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Modal Créer Proposition (reste identique) -->
+    <div id="proposalModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+        <div class="card rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-bold flex items-center gap-2">
+                        <i data-lucide="megaphone" class="w-6 h-6 text-green-400"></i>
+                        Créer une Nouvelle Proposition
+                    </h3>
+                    <button id="closeModalBtn" class="text-gray-400 hover:text-white transition">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <form id="createProposalForm">
+                    <div class="mb-4">
+                        <label class="text-gray-400 text-sm font-semibold">Titre *</label>
+                        <input type="text" id="proposalTitle" 
+                               class="w-full mt-2 px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 focus:border-green-500 focus:outline-none" 
+                               placeholder="Ex: Distribution 500 repas en Haïti" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-gray-400 text-sm font-semibold">Description *</label>
+                        <textarea id="proposalDescription" rows="4"
+                               class="w-full mt-2 px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 focus:border-green-500 focus:outline-none" 
+                               required></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-gray-400 text-sm font-semibold">Budget (USDT) *</label>
+                        <input type="number" id="proposalBudget" 
+                               class="w-full mt-2 px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 focus:border-green-500 focus:outline-none" 
+                               placeholder="2000" min="100" step="100" required>
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="button" id="cancelBtn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-lg">
+                            Annuler
+                        </button>
+                        <button type="submit" class="flex-1 btn-primary text-white font-bold py-3 rounded-lg">
+                            Soumettre
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel Notifications -->
+    <div id="notifPanel" class="hidden fixed top-20 right-4 card rounded-lg p-4 w-96 z-50 max-h-96 overflow-y-auto">
+        <h3 class="font-bold mb-3 flex items-center gap-2">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            Notifications
+        </h3>
+        <div id="notifList"></div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-auto pt-8 pb-4 border-t border-gray-800">
+        <div class="text-center text-gray-500 text-sm">
+            <p>© 2025 NutriChain. Tous droits réservés.</p>
+            <p class="mt-2">💚 Ensemble, nous nourrissons le monde 💚</p>
+        </div>
+    </footer>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let userWallet = null;
+        let currentTab = 'dashboard';
+        let transactions = [];
+        let userVotes = [];
+        let notifications = [
+            { id: 1, text: 'Bienvenue sur NutriChain ! 🎉', time: Date.now(), read: false },
+            { id: 2, text: 'Nouvelle proposition: Distribution Haiti', time: Date.now() - 3600000, read: false }
+        ];
+
+        let proposals = [
+            { 
+                id: 1, 
+                title: 'Distribution 1000 repas Haiti', 
+                description: 'Programme d\'urgence suite aux catastrophes naturelles',
+                budget: 2000,
+                votes_yes: 847, 
+                votes_no: 23,
+                created_at: Date.now() - 86400000 * 2,
+                voting_ends: Date.now() + 86400000 * 5,
+                comments: [
+                    { user: '0xABC...123', text: 'Excellent projet ! Je vote pour.', time: Date.now() - 3600000 }
+                ]
+            },
+            { 
+                id: 2, 
+                title: 'Partenariat Croix-Rouge Sénégal',
+                description: 'Extension du programme dans 5 nouvelles villes',
+                budget: 5000,
+                votes_yes: 1205, 
+                votes_no: 89,
+                created_at: Date.now() - 86400000 * 5,
+                voting_ends: Date.now() + 86400000 * 3,
+                comments: []
+            },
+            { 
+                id: 3, 
+                title: 'Cantines scolaires Mali',
+                description: 'Alimentation quotidienne pour 500 enfants',
+                budget: 3500,
+                votes_yes: 643, 
+                votes_no: 156,
+                created_at: Date.now() - 86400000 * 1,
+                voting_ends: Date.now() + 86400000 * 7,
+                comments: []
+            }
+        ];
+
+        // Gestion des tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+                btn.classList.add('tab-active');
+                
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+                document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
+                
+                currentTab = btn.dataset.tab;
+                
+                if (currentTab === 'impact') initCharts();
+                if (currentTab === 'impact') initMap();
+                if (currentTab === 'history') loadHistory();
+                if (currentTab === 'profile') updateProfile();
+                
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            };
+        });
+
+        // Notifications
+        document.getElementById('notifBtn').onclick = () => {
+            const panel = document.getElementById('notifPanel');
+            panel.classList.toggle('hidden');
+            updateNotifications();
+        };
+
+        function updateNotifications() {
+            const unread = notifications.filter(n => !n.read).length;
+            const badge = document.getElementById('notifBadge');
+            const list = document.getElementById('notifList');
+            
+            if (unread > 0) {
+                badge.classList.remove('hidden');
+                badge.textContent = unread;
+            } else {
+                badge.classList.add('hidden');
+            }
+            
+            list.innerHTML = notifications.map(n => `
+                <div class="bg-gray-900 p-3 rounded-lg mb-2 ${n.read ? 'opacity-50' : ''}">
+                    <p class="text-sm">${n.text}</p>
+                    <p class="text-xs text-gray-500 mt-1">${formatTime(n.time)}</p>
+                </div>
+            `).join('');
+            
+            notifications.forEach(n => n.read = true);
+        }
+
+        // Modal
+        const modal = document.getElementById('proposalModal');
+        document.getElementById('openModalBtn').onclick = () => {
+            if (!userWallet) {
+                showNotification('⚠️ Connectez votre wallet d\'abord', 'warning');
+                return;
+            }
+            modal.classList.remove('hidden');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        };
+        document.getElementById('closeModalBtn').onclick = () => modal.classList.add('hidden');
+        document.getElementById('cancelBtn').onclick = () => modal.classList.add('hidden');
+
+        // Connecter wallet (MetaMask ou générer)
+        document.getElementById('connectWallet').onclick = async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                    userWallet = { address: accounts[0] };
+                    document.getElementById('walletStatus').textContent = accounts[0].substring(0, 6) + '...';
+                    document.getElementById('userAddress').textContent = accounts[0].substring(0, 10) + '...';
+                    showNotification('✅ MetaMask connecté !', 'success');
+                } catch (error) {
+                    console.error('Erreur MetaMask:', error);
+                }
+            } else {
+                const response = await fetch(`${API_URL}/wallet/new`, { method: 'POST' });
+                userWallet = await response.json();
+                document.getElementById('walletStatus').textContent = userWallet.address.substring(0, 6) + '...';
+                document.getElementById('userAddress').textContent = userWallet.address.substring(0, 10) + '...';
+                showNotification('✅ Wallet créé !', 'success');
+            }
+            loadBalance();
+        };
+
+        // Charger stats
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/stats`);
+                const data = await response.json();
+                document.getElementById('nutriPrice').textContent = `$${data.nutricoin.price.toFixed(2)}`;
+                document.getElementById('apy').textContent = `${data.apy.toFixed(2)}%`;
+                document.getElementById('mealsServed').textContent = data.meals.meals_distributed.toLocaleString();
+                document.getElementById('peopleFed').textContent = data.meals.people_fed.toLocaleString();
+                document.getElementById('countries').textContent = data.meals.countries_served;
+            } catch (error) {
+                console.error('Erreur stats:', error);
+            }
+        }
+
+        async function loadBalance() {
+            if (!userWallet) return;
+            try {
+                const response = await fetch(`${API_URL}/balance/${userWallet.address}`);
+                const balance = await response.json();
+                document.getElementById('userBalance').textContent = balance.total_value.toFixed(2);
+            } catch (error) {
+                console.error('Erreur solde:', error);
+            }
+        }
+
+        // Staking
+        document.getElementById('stakeAmount').oninput = (e) => {
+            const amount = parseFloat(e.target.value) || 0;
+            document.getElementById('nutriToReceive').textContent = amount.toFixed(2);
+            document.getElementById('yearlyInterest').textContent = (amount * 0.0725).toFixed(2);
+        };
+
+        document.getElementById('stakeForm').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!userWallet) {
+                showNotification('⚠️ Connectez votre wallet', 'warning');
+                return;
+            }
+            const amount = parseFloat(document.getElementById('stakeAmount').value);
+            try {
+                const response = await fetch(`${API_URL}/stake`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ address: userWallet.address, amount })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showNotification(`✅ ${result.nutricoin_received.toFixed(2)} NUTRICOIN reçus !`, 'success');
+                    transactions.push({ type: 'Stake', amount, time: Date.now() });
+                    loadStats();
+                    loadBalance();
+                    e.target.reset();
+                }
+            } catch (error) {
+                console.error('Erreur staking:', error);
+            }
+        };
+
+        // Retrait
+        document.getElementById('withdrawAmount').oninput = (e) => {
+            const amount = parseFloat(e.target.value) || 0;
+            document.getElementById('usdtToReceive').textContent = amount.toFixed(2);
+        };
+
+        document.getElementById('withdrawForm').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!userWallet) {
+                showNotification('⚠️ Connectez votre wallet', 'warning');
+                return;
+            }
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            try {
+                const response = await fetch(`${API_URL}/withdraw`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ address: userWallet.address, amount })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showNotification(`✅ ${result.usdt_received.toFixed(2)} USDT reçus !`, 'success');
+                    transactions.push({ type: 'Withdraw', amount, time: Date.now() });
+                    loadStats();
+                    loadBalance();
+                    e.target.reset();
+                }
+            } catch (error) {
+                console.error('Erreur retrait:', error);
+            }
+        };
+
+        // Créer proposition
+        document.getElementById('createProposalForm').onsubmit = (e) => {
+            e.preventDefault();
+            const newProposal = {
+                id: proposals.length + 1,
+                title: document.getElementById('proposalTitle').value,
+                description: document.getElementById('proposalDescription').value,
+                budget: parseFloat(document.getElementById('proposalBudget').value),
+                votes_yes: 0,
+                votes_no: 0,
+                created_at: Date.now(),
+                voting_ends: Date.now() + 86400000 * 7,
+                comments: []
+            };
+            proposals.unshift(newProposal);
+            loadProposals();
+            modal.classList.add('hidden');
+            e.target.reset();
+            showNotification('✅ Proposition créée !', 'success');
+            notifications.unshift({
+                id: notifications.length + 1,
+                text: `Nouvelle proposition: ${newProposal.title}`,
+                time: Date.now(),
+                read: false
+            });
+            updateNotifications();
+        };
+
+        // Charger propositions
+        function loadProposals() {
+            const container = document.getElementById('proposalsContainer');
+            const search = document.getElementById('searchProposals')?.value.toLowerCase() || '';
+            const filter = document.getElementById('filterProposals')?.value || 'all';
+            
+            let filtered = proposals.filter(p => {
+                const matchSearch = p.title.toLowerCase().includes(search) || p.description.toLowerCase().includes(search);
+                const ended = p.voting_ends < Date.now();
+                const total = p.votes_yes + p.votes_no;
+                const approved = total > 0 && (p.votes_yes / total) > 0.7;
+                
+                if (filter === 'active' && ended) return false;
+                if (filter === 'ended' && !ended) return false;
+                if (filter === 'approved' && !approved) return false;
+                
+                return matchSearch;
+            });
+            
+            container.innerHTML = filtered.map(p => {
+                const total = p.votes_yes + p.votes_no;
+                const percent = total > 0 ? (p.votes_yes / total * 100).toFixed(1) : 0;
+                const ended = p.voting_ends < Date.now();
+                
+                return `
+                    <div class="bg-gray-900 border border-gray-700 rounded-lg p-4 mb-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg">${p.title}</h3>
+                            <div class="flex gap-2">
+                                ${ended ? '<span class="bg-red-900/30 text-red-400 text-xs px-3 py-1 rounded-full">Terminé</span>' :
+                                `<span class="timer-badge text-white text-xs px-3 py-1 rounded-full font-semibold" data-proposal-id="${p.id}">
+                                    ⏱️ ${formatTimeRemaining(p.voting_ends)}
+                                </span>`}
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-3">${p.description}</p>
+                        <div class="flex gap-2 mb-3">
+                            <span class="bg-blue-900/30 text-blue-400 text-xs px-3 py-1 rounded-full">
+                                💰 ${p.budget.toLocaleString()} USDT
+                            </span>
+                            <span class="bg-purple-900/30 text-purple-400 text-xs px-3 py-1 rounded-full">
+                                🗳️ ${total} votes
+                            </span>
+                            ${percent > 70 ? '<span class="bg-green-900/30 text-green-400 text-xs px-3 py-1 rounded-full">✓ Approuvé</span>' : ''}
+                        </div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-green-400">✓ ${p.votes_yes} (${percent}%)</span>
+                            <span class="text-red-400">✗ ${p.votes_no}</span>
+                        </div>
+                        <div class="progress-bar bg-gray-700 mb-3">
+                            <div class="progress-bar bg-green-500" style="width: ${percent}%"></div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="vote(${p.id}, 'yes')" ${ended ? 'disabled' : ''} class="flex-1 btn-primary py-2 rounded text-sm ${ended ? 'opacity-50 cursor-not-allowed' : ''}">
+                                👍 Pour
+                            </button>
+                            <button onclick="vote(${p.id}, 'no')" ${ended ? 'disabled' : ''} class="flex-1 btn-danger py-2 rounded text-sm ${ended ? 'opacity-50 cursor-not-allowed' : ''}">
+                                👎 Contre
+                            </button>
+                            <button onclick="showComments(${p.id})" class="bg-gray-700 px-4 py-2 rounded text-sm">
+                                💬 ${p.comments.length}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // Filtres et recherche
+        document.getElementById('searchProposals')?.addEventListener('input', loadProposals);
+        document.getElementById('filterProposals')?.addEventListener('change', loadProposals);
+
+        function vote(id, type) {
+            if (!userWallet) {
+                showNotification('⚠️ Connectez votre wallet pour voter', 'warning');
+                return;
+            }
+            const proposal = proposals.find(p => p.id === id);
+            if (type === 'yes') {
+                proposal.votes_yes++;
+            } else {
+                proposal.votes_no++;
+            }
+            userVotes.push({ proposalId: id, type, time: Date.now() });
+            loadProposals();
+            showNotification('✅ Vote enregistré !', 'success');
+        }
+
+        function showComments(id) {
+            const proposal = proposals.find(p => p.id === id);
+            const commentsHTML = proposal.comments.map(c => `
+                <div class="bg-gray-800 p-3 rounded mb-2">
+                    <p class="text-sm font-semibold">${c.user}</p>
+                    <p class="text-sm text-gray-400">${c.text}</p>
+                    <p class="text-xs text-gray-500 mt-1">${formatTime(c.time)}</p>
+                </div>
+            `).join('') || '<p class="text-gray-400 text-sm">Aucun commentaire</p>';
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="card rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+                    <h3 class="text-xl font-bold mb-4">Commentaires: ${proposal.title}</h3>
+                    ${commentsHTML}
+                    <div class="mt-4">
+                        <textarea id="newComment" class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700" placeholder="Ajouter un commentaire..." rows="3"></textarea>
+                        <button onclick="addComment(${id})" class="btn-primary px-4 py-2 rounded mt-2">Publier</button>
+                        <button onclick="this.closest('.fixed').remove()" class="bg-gray-700 px-4 py-2 rounded mt-2 ml-2">Fermer</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function addComment(id) {
+            if (!userWallet) {
+                showNotification('⚠️ Connectez votre wallet', 'warning');
+                return;
+            }
+            const text = document.getElementById('newComment').value;
+            if (!text) return;
+            
+            const proposal = proposals.find(p => p.id === id);
+            proposal.comments.push({
+                user: userWallet.address.substring(0, 10) + '...',
+                text,
+                time: Date.now()
+            });
+            showNotification('✅ Commentaire ajouté !', 'success');
+            document.querySelector('.fixed').remove();
+        }
+
+        // Graphiques
+        function initCharts() {
+            // Graphique des repas
+            const mealsCtx = document.getElementById('mealsChart').getContext('2d');
+            new Chart(mealsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov'],
+                    datasets: [{
+                        label: 'Repas Distribués',
+                        data: [120, 250, 380, 520, 680, 850, 980, 1050, 1150, 1220, 1247],
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: '#e5e7eb' } } },
+                    scales: {
+                        y: { ticks: { color: '#e5e7eb' }, grid: { color: '#30363d' } },
+                        x: { ticks: { color: '#e5e7eb' }, grid: { color: '#30363d' } }
+                    }
+                }
+            });
+
+            // Graphique par pays
+            const countriesCtx = document.getElementById('countriesChart').getContext('2d');
+            new Chart(countriesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Haïti', 'Sénégal', 'Mali', 'Burkina Faso', 'Niger'],
+                    datasets: [{
+                        data: [450, 320, 280, 150, 47],
+                        backgroundColor: ['#22c55e', '#3b82f6', '#a855f7', '#f59e0b', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: '#e5e7eb' } } }
+                }
+            });
+        }
+
+        // Carte mondiale
+        function initMap() {
+            const map = L.map('map').setView([15, 0], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
+            const locations = [
+                { name: 'Haïti', coords: [18.5944, -72.3074], meals: 450 },
+                { name: 'Sénégal', coords: [14.4974, -14.4524], meals: 320 },
+                { name: 'Mali', coords: [12.6392, -8.0029], meals: 280 },
+                { name: 'Burkina Faso', coords: [12.2383, -1.5616], meals: 150 },
+                { name: 'Niger', coords: [13.5127, 2.1128], meals: 47 }
+            ];
+            
+            locations.forEach(loc => {
+                L.circleMarker(loc.coords, {
+                    radius: Math.sqrt(loc.meals) / 2,
+                    fillColor: '#22c55e',
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.6
+                }).addTo(map).bindPopup(`<b>${loc.name}</b><br>${loc.meals} repas distribués`);
+            });
+        }
+
+        // Historique
+        function loadHistory() {
+            const txContainer = document.getElementById('transactionsHistory');
+            txContainer.innerHTML = transactions.length > 0 ? transactions.map(tx => `
+                <div class="bg-gray-900 p-4 rounded-lg mb-2 flex justify-between">
+                    <div>
+                        <p class="font-semibold">${tx.type}</p>
+                        <p class="text-sm text-gray-400">${formatTime(tx.time)}</p>
+                    </div>
+                    <p class="text-lg font-bold text-green-400">${tx.amount} ${tx.type === 'Stake' ? 'USDT' : 'NUTRI'}</p>
+                </div>
+            `).join('') : '<p class="text-gray-400">Aucune transaction</p>';
+
+            const votesContainer = document.getElementById('votesHistory');
+            votesContainer.innerHTML = userVotes.length > 0 ? userVotes.map(v => {
+                const proposal = proposals.find(p => p.id === v.proposalId);
+                return `
+                    <div class="bg-gray-900 p-4 rounded-lg mb-2">
+                        <p class="font-semibold">${proposal.title}</p>
+                        <p class="text-sm text-gray-400">Vote: ${v.type === 'yes' ? '👍 Pour' : '👎 Contre'} • ${formatTime(v.time)}</p>
+                    </div>
+                `;
+            }).join('') : '<p class="text-gray-400">Aucun vote</p>';
+        }
+
+        // Export CSV
+        document.getElementById('exportCSV').onclick = () => {
+            const csv = 'Type,Amount,Date\n' + transactions.map(tx => 
+                `${tx.type},${tx.amount},${new Date(tx.time).toLocaleString()}`
+            ).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'nutrichain_transactions.csv';
+            a.click();
+        };
+
+        // Profil
+        function updateProfile() {
+            document.getElementById('profileAddress').textContent = userWallet ? userWallet.address.substring(0, 15) + '...' : 'Non connecté';
+            document.getElementById('profileStaked').textContent = transactions.filter(tx => tx.type === 'Stake').reduce((sum, tx) => sum + tx.amount, 0).toFixed(2) + ' USDT';
+            document.getElementById('profileVotes').textContent = userVotes.length;
+            document.getElementById('profileProposals').textContent = proposals.filter(p => p.created_at > Date.now() - 86400000 * 7).length;
+            document.getElementById('profileMeals').textContent = Math.floor(transactions.filter(tx => tx.type === 'Stake').reduce((sum, tx) => sum + tx.amount, 0) / 2);
+        }
+
+        // Notifications système
+        function showNotification(text, type = 'info') {
+            const notif = document.createElement('div');
+            notif.className = `notification fixed top-4 right-4 ${type === 'success' ? 'bg-green-500' : type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'} text-white px-6 py-4 rounded-lg shadow-lg z-50`;
+            notif.textContent = text;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3000);
+        }
+
+        // Utilitaires
+        function formatTime(timestamp) {
+            const seconds = Math.floor((Date.now() - timestamp) / 1000);
+            if (seconds < 60) return 'À l\'instant';
+            if (seconds < 3600) return `Il y a ${Math.floor(seconds / 60)} min`;
+            if (seconds < 86400) return `Il y a ${Math.floor(seconds / 3600)} h`;
+            return `Il y a ${Math.floor(seconds / 86400)} jours`;
+        }
+
+        function formatTimeRemaining(timestamp) {
+            const remaining = timestamp - Date.now();
+            if (remaining < 0) return 'Terminé';
+            const days = Math.floor(remaining / 86400000);
+            const hours = Math.floor((remaining % 86400000) / 3600000);
+            if (days > 0) return `${days}j ${hours}h`;
+            return `${hours}h`;
+        }
+
+        // Timers
+        setInterval(() => {
+            document.querySelectorAll('.timer-badge').forEach(badge => {
+                const proposalId = parseInt(badge.dataset.proposalId);
+                const proposal = proposals.find(p => p.id === proposalId);
+                if (proposal) {
+                    badge.textContent = `⏱️ ${formatTimeRemaining(proposal.voting_ends)}`;
+                }
+            });
+        }, 60000);
+
+        // Init
+        window.onload = () => {
+            loadStats();
+            loadProposals();
+            updateNotifications();
+            setInterval(loadStats, 5000);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
