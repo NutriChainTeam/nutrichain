@@ -1,0 +1,101 @@
+#!/bin/bash
+
+PROJET_DIR=~/nutrichain_restored
+
+# Créer index.html avec design complet
+cat <<EOF > "$PROJET_DIR/templates/index.html"
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NutriChain - Blockchain Humanitaire</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/alerts.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/wallet.css') }}" />
+  <style>
+  :root {
+    --primary-gradient: linear-gradient(135deg, #667eea, #764ba2);
+    --background-gradient: linear-gradient(135deg, #121212, #1e1e2f);
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0b0;
+    --card-bg: #222232;
+    --btn-hover-shadow: rgba(102, 126, 234, 0.6);
+  }
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: "Inter", sans-serif;
+    background: var(--background-gradient);
+    color: var(--text-primary);
+    min-height: 100vh;
+  }
+  header {
+    background: #1b1b2f;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgb(102 126 234 / 0.4);
+  }
+  .wallet-section button {
+    background: var(--primary-gradient);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+  }
+  .wallet-section button:hover {
+    box-shadow: 0 0 15px var(--btn-hover-shadow);
+    transform: translateY(-2px);
+  }
+  main {
+    max-width: 1400px;
+    margin: 30px auto;
+    padding: 0 20px;
+  }
+  #map {
+    height: 520px;
+    border-radius: 16px;
+    box-shadow: 0 6px 22px rgb(0 0 0 / 0.6);
+  }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wallet-section">
+    <button id="walletButton">Connecter Wallet</button>
+    <span id="walletAddress" style="display:none; margin-left: 10px; font-family: monospace;"></span>
+  </div>
+</header>
+<main>
+  <h1>Bienvenue sur NutriChain</h1>
+  <div id="map"></div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+<script src="https://unpkg.com/web3modal@1.9.8/dist/index.js"></script>
+<script src="https://unpkg.com/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
+<script src="{{ url_for('static', filename='js/walletconnect.js') }}"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  const map = L.map('map').setView([20, 0], 2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+</script>
+</body>
+</html>
+EOF
+
+# Créer fichiers CSS vides pour ne pas casser le style lié
+mkdir -p "$PROJET_DIR/static/css"
+touch "$PROJET_DIR/static/css/alerts.css"
+touch "$PROJET_DIR/static/css/wallet.css"
+
+echo "Le design complet a été restauré. Relancez votre serveur Flask et rechargez la page."

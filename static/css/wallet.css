@@ -1,0 +1,58 @@
+.wallet-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+#walletButton {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0, #764ba2 100);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+#walletButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+#walletButton.connected {
+  background: linear-gradient(135deg, #10b981 0, #059669 100);
+}
+#walletAddress {
+  padding: 8px 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  color: white;
+  font-family: monospace;
+  font-size: 14px;
+}
+#userBalance {
+  padding: 8px 15px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
+}
+.language-selector {
+  display: flex;
+  gap: 8px;
+}
+.language-selector button {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.language-selector button:hover,
+.language-selector button.active {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}

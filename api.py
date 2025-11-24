@@ -1,0 +1,271 @@
+from flask import Flask, jsonify, request, render_template
+from flask_cors import CORS
+from blockchain import Blockchain
+import time
+
+app = Flask(__name__)
+CORS(app)
+
+# Instance de la blockchain
+blockchain = Blockchain()
+
+# Adresse pour les récompenses de mining
+MINING_ADDRESS = "nutrichain_miner_1"
+
+@app.route('/')
+def index():
+    return render_template('dashboard.html')
+
+# ========== BLOCKCHAIN ==========
+
+@app.route('/chain', methods=['GET'])
+def get_chain():
+    """Récupérer toute la chaîne"""
+    return jsonify({
+        'chain': blockchain.get_chain_data(),
+        'length': len(blockchain.chain)
+    })
+
+@app.route('/chain/validate', methods=['GET'])
+def validate_chain():
+    """Vérifier l'intégrité de la blockchain"""
+    is_valid = blockchain.is_chain_valid()
+    return jsonify({
+        'valid': is_valid,
+        'message': 'Blockchain valide' if is_valid else 'Blockchain corrompue'
+    })
+
+# ========== TRANSACTIONS ==========
+
+@app.route('/transactions/new', methods=['POST'])
+def new_transaction():
+    """Créer une nouvelle transaction (don)"""
+    values = request.get_json()
+    
+    required = ['sender', 'recipient', 'amount']
+    if not all(k in values for k in required):
+        return jsonify({'error': 'Champs manquants'}), 400
+    
+    index = blockchain.add_transaction(
+        values['sender'],
+        values['recipient'],
+        float(values['amount'])
+    )
+    
+    return jsonify({
+        'message': f'Transaction ajoutée au bloc {index}',
+        'transaction': {
+            'sender': values['sender'],
+            'recipient': values['recipient'],
+            'amount': values['amount']
+        }
+    }), 201
+
+@app.route('/transactions/pending', methods=['GET'])
+def get_pending_transactions():
+    """Récupérer les transactions en attente"""
+    return jsonify({
+        'transactions': blockchain.pending_transactions,
+        'count': len(blockchain.pending_transactions)
+    })
+
+# ========== MINING ==========
+
+@app.route('/mine', methods=['POST'])
+def mine():
+    """Miner un nouveau bloc"""
+    # Obtenir l'adresse du mineur (optionnel)
+    data = request.get_json() or {}
+    miner_address = data.get('miner_address', MINING_ADDRESS)
+    
+    # Miner le bloc
+    start_time = time.time()
+    new_block = blockchain.mine_pending_transactions(miner_address)
+    mining_time = time.time() - start_time
+    
+    return jsonify({
+        'message': 'Bloc miné avec succès',
+        'block': new_block.to_dict(),
+        'mining_time': f"{mining_time:.2f}s",
+        'reward': blockchain.mining_reward,
+        'miner': miner_address
+    }), 200
+
+# ========== WALLET / BALANCE ==========
+
+@app.route('/balance/<address>', methods=['GET'])
+def get_balance(address):
+    """Obtenir le solde d'une adresse"""
+    balance = blockchain.calculate_balance(address)
+    return jsonify({
+        'address': address,
+        'balance': balance,
+        'unit': 'NUTRI'
+    })
+
+# ========== STATS ==========
+
+@app.route('/stats', methods=['GET'])
+def get_stats():
+    """Statistiques globales"""
+    total_blocks = len(blockchain.chain)
+    total_transactions = sum(len(block.transactions) for block in blockchain.chain)
+    pending_tx = len(blockchain.pending_transactions)
+    
+    return jsonify({
+        'total_blocks': total_blocks,
+        'total_transactions': total_transactions,
+        'pending_transactions': pending_tx,
+        'difficulty': blockchain.difficulty,
+        'mining_reward': blockchain.mining_reward,
+        'last_block_hash': blockchain.get_latest_block().hash
+    })
+
+# ========== DONATIONS MAP (par région) ==========
+@app.route('/donations/map', methods=['GET'])
+def donations_map():
+    """Agrège les dons par grande région pour la carte"""
+    # Totaux temporaires par région logique
+    regions_totals = {
+        "afrique_ouest": 0.0,
+        "afrique_est": 0.0,
+        "moyen_orient": 0.0,
+        "asie_sud": 0.0,
+        "afrique_centrale": 0.0,
+        "afrique_nord": 0.0
+    }
+
+    # Parcourir toute la chaîne et les pending
+    all_txs = []
+    for block in blockchain.chain:
+        all_txs.extend(block.transactions)
+    all_txs.extend(blockchain.pending_transactions)
+
+    for tx in all_txs:
+        recipient = tx.get('recipient', '')
+        amount = float(tx.get('amount', 0))
+
+        if not recipient.startswith("food_program_"):
+            continue
+
+        region = recipient.replace("food_program_", "")
+
+        if region in ("senegal", "afrique_ouest"):
+            regions_totals["afrique_ouest"] += amount
+        elif region in ("ethiopie", "afrique_est"):
+            regions_totals["afrique_est"] += amount
+        elif region in ("yemen", "moyen_orient"):
+            regions_totals["moyen_orient"] += amount
+        elif region in ("bangladesh", "asie_sud"):
+            regions_totals["asie_sud"] += amount
+        elif region in ("rdc", "rd_congo", "afrique_centrale"):
+            regions_totals["afrique_centrale"] += amount
+        elif region in ("nigeria", "afrique_nord"):
+            regions_totals["afrique_nord"] += amount
+
+    return jsonify(regions_totals)
+
+
+# ========== DONATIONS (spécifique humanitaire) ==========
+
+@app.route('/donate', methods=['POST'])
+def donate():
+    """Faire un don (alias de transaction)"""
+    values = request.get_json() or {}
+
+    donor = values.get('donor', 'anonymous')
+    region = values.get('region', 'global')
+    amount = float(values.get('amount', 0))
+
+    if amount <= 0:
+        return jsonify({'error': 'Montant invalide'}), 400
+
+    # Si le donateur n'est pas "anonymous", vérifier le solde NUTRI
+    if donor != 'anonymous':
+        balance = blockchain.calculate_balance(donor)
+        if balance < amount:
+            return jsonify({
+                'error': 'Solde insuffisant',
+                'balance': balance,
+                'required': amount
+            }), 400
+
+    blockchain.add_transaction(
+        sender=donor,
+        recipient=f"food_program_{region}",
+        amount=amount
+    )
+
+    return jsonify({
+        'message': f'{amount} NUTRI donnés = {amount} repas',
+        'donor': donor,
+        'region': region,
+        'meals': amount
+    }), 201
+
+
+# ========== STAKING ==========
+
+staking_pool = {}
+
+staking_pool = {}
+
+@app.route('/stake', methods=['POST'])
+def stake():
+    """Staker des tokens"""
+    values = request.get_json() or {}
+    address = values.get('address')
+    amount = float(values.get('amount', 0))
+
+    if not address:
+        return jsonify({'error': 'Adresse manquante'}), 400
+
+    if amount <= 0:
+        return jsonify({'error': 'Montant invalide'}), 400
+
+    # Vérifier le solde NUTRI avant de staker
+    balance = blockchain.calculate_balance(address)
+    if balance < amount:
+        return jsonify({
+            'error': 'Solde insuffisant pour staker',
+            'balance': balance,
+            'required': amount
+        }), 400
+
+    if address not in staking_pool:
+        staking_pool[address] = 0.0
+
+    staking_pool[address] += amount
+
+    return jsonify({
+        'message': f'{amount} NUTRI stakés',
+        'address': address,
+        'total_staked': staking_pool[address],
+        'apy': 7.25
+    })
+
+
+@app.route('/stake/<address>', methods=['GET'])
+def get_stake(address):
+    """Voir le staking d'une adresse"""
+    staked = staking_pool.get(address, 0)
+    estimated_rewards = staked * 0.0725  # 7.25% APY
+    
+    return jsonify({
+        'address': address,
+        'staked': staked,
+        'estimated_annual_rewards': estimated_rewards,
+        'apy': 7.25
+    })
+
+if __name__ == '__main__':
+    print("\n" + "="*50)
+    print("🍽️  NutriChain - Blockchain Humanitaire")
+    print("="*50)
+    print(f"📧 Contact: contact@nutrichain.org")
+    print(f"🌐 Dashboard: http://localhost:5000")
+    print(f"📊 API: http://localhost:5000/chain")
+    print(f"⛏️  Mining: POST http://localhost:5000/mine")
+    print("="*50 + "\n")
+    
+    app.run(host='0.0.0.0', port=5000, debug=True)
