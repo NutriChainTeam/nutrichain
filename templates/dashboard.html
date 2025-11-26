@@ -710,8 +710,319 @@
       }
     }
 
+      <!-- SCRIPTS -->
+  <script src="/static/js/i18n.js"></script>
+  <script src="/static/js/alerts.js"></script>
+  <script src="/static/js/wallet.js"></script>
+
+  <script>
+    // ====== CARTE MONDIALE ======
+    const map = L.map('map').setView([20, 0], 2);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // ====== STATS EN TEMPS RÉEL (/stats) ======
+    async function loadStats() {
+      try {
+        const response = await fetch('/stats');
+        const data = await response.json();
+
+        const footerBlocks = document.getElementById('footerBlocks');
+        const footerTx = document.getElementById('footerTx');
+        if (footerBlocks) footerBlocks.textContent = data.total_blocks ?? 0;
+        if (footerTx) footerTx.textContent = data.total_transactions ?? 0;
+
+        const blocksCount = document.getElementById('blocksCount');
+        const txCount = document.getElementById('txCount');
+        const lastHashHint = document.getElementById('lastHashHint');
+
+        if (blocksCount) blocksCount.textContent = data.total_blocks ?? 0;
+        if (txCount) txCount.textContent = data.total_transactions ?? 0;
+        if (lastHashHint && data.last_block_hash) {
+          lastHashHint.textContent = "Dernier hash: " + data.last_block_hash.slice(0, 12) + "...";
+        }
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    }
+
+    loadStats();
+    setInterval(loadStats, 10000);
+
+    // ====== PROPOSALS (pour don ciblé) ======
+    async function loadProposals() {
+      try {
+        const res = await fetch('/proposals');
+        const data = await res.json();
+
+        const select = document.getElementById('proposalSelect');
+        if (!select) return;
+
+        select.innerHTML = '<option value="">-- Choisir un projet --</option>';
+
+        data.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = `${p.title} (${p.city}, ${p.country})`;
+          select.appendChild(opt);
+        });
+      } catch (e) {
+        console.error('Error loading proposals:', e);
+      }
+    }
+
+    // Afficher / cacher le select de projets selon le type de don
+    const donTypeEl = document.getElementById('donType');
+    if (donTypeEl) {
+      donTypeEl.addEventListener('change', () => {
+        const g = document.getElementById('proposalSelectGroup');
+        if (!g) return;
+        if (donTypeEl.value === 'proposal') {
+          g.style.display = '';
+          loadProposals();
+        } else {
+          g.style.display = 'none';
+        }
+      });
+    }
+
+    // ====== DON HUMANITAIRE (/donate) ======
+    async function handleHumanitarianDonation() {
+      const donor = document.getElementById('donor').value || 'anonymous';
+      const regionSelect = document.getElementById('region');
+      const donTypeEl = document.getElementById('donType');
+      const proposalSelect = document.getElementById('proposalSelect');
+      const amount = parseFloat(document.getElementById('donationAmount').value || 0);
+      const statusEl = document.getElementById('donationStatus');
+
+      if (amount <= 0) {
+        statusEl.textContent = "Montant invalide.";
+        statusEl.style.color = "#f87171";
+        return;
+      }
+
+      let region = 'auto';
+      let proposal_id = null;
+
+      const donType = donTypeEl ? donTypeEl.value : 'region';
+
+      if (donType === 'region') {
+        region = (regionSelect && regionSelect.value) || 'auto';
+      } else if (donType === 'proposal') {
+        proposal_id = proposalSelect ? proposalSelect.value : null;
+        region = 'auto';
+        if (!proposal_id) {
+          statusEl.textContent = "Choisis un projet.";
+          statusEl.style.color = "#f87171";
+          return;
+        }
+      } else if (donType === 'auto') {
+        region = 'auto';
+        proposal_id = null;
+      }
+
+      statusEl.textContent = "Envoi du don en cours...";
+      statusEl.style.color = "#93c5fd";
+
+      try {
+        const res = await fetch('/donate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ donor, region, proposal_id, amount })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusEl.textContent = data.error || "Erreur lors du don.";
+          statusEl.style.color = "#f87171";
+          showAlert('error', data.error || "Erreur lors du don.");
+          return;
+        }
+
+        statusEl.textContent = data.message;
+        statusEl.style.color = "#4ade80";
+        showAlert('success', data.message);
+        loadStats();
+        loadDonationsOnMap();
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "Erreur réseau lors du don.";
+        statusEl.style.color = "#f87171";
+        showAlert('error', "Erreur réseau lors du don.");
+      }
+    }
+
+    // ====== STAKING (/stake) ======
+    async function handleStaking() {
+      const amount = parseFloat(document.getElementById('stakeAmount').value || 0);
+      const statusEl = document.getElementById('stakeStatus');
+
+      if (!userAddress) {
+        statusEl.textContent = "Connecte d'abord ton wallet.";
+        statusEl.style.color = "#f97316";
+        showAlert('warning', "Connecte d'abord ton wallet.");
+        return;
+      }
+      if (amount <= 0) {
+        statusEl.textContent = "Montant invalide.";
+        statusEl.style.color = "#f87171";
+        return;
+      }
+
+      statusEl.textContent = "Staking en cours...";
+      statusEl.style.color = "#93c5fd";
+
+      try {
+        const res = await fetch('/stake', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: userAddress, amount })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusEl.textContent = data.error || "Erreur lors du staking.";
+          statusEl.style.color = "#f87171";
+          showAlert('error', data.error || "Erreur lors du staking.");
+          return;
+        }
+
+        statusEl.textContent =
+          `${data.message} | Total staké : ${data.total_staked} NUTRI | APY ${data.apy}%`;
+        statusEl.style.color = "#4ade80";
+        showAlert('success', data.message);
+        loadStats();
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "Erreur réseau lors du staking.";
+        statusEl.style.color = "#f87171";
+        showAlert('error', "Erreur réseau lors du staking.");
+      }
+    }
+
+    // ====== DERNIERS BLOCS (/chain) ======
+    async function loadLatestBlocks() {
+      try {
+        const res = await fetch('/chain');
+        const data = await res.json();
+        const chain = data.chain || [];
+        const tbody = document.querySelector('#blocksTable tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        const latest = chain.slice(-5).reverse();
+        latest.forEach(block => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="padding:6px;">${block.index}</td>
+            <td style="padding:6px; font-family:monospace;">
+              ${String(block.hash).slice(0, 12)}...
+            </td>
+            <td style="padding:6px;">${(block.transactions || []).length}</td>
+            <td style="padding:6px;">
+              ${new Date(block.timestamp * 1000).toLocaleString()}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error('Error loading blocks:', e);
+      }
+    }
+
+    loadLatestBlocks();
+    setInterval(loadLatestBlocks, 15000);
+
+    // ====== DONNÉES CARTE LIÉES AUX DONS (/donations/map) ======
+    const regionConfigs = {
+      afrique_ouest: {
+        coords: [14.5, -14.5],
+        label: "Afrique de l'Ouest (Sénégal, Nigeria...)"
+      },
+      afrique_est: {
+        coords: [9.0, 38.7],
+        label: "Afrique de l'Est (Éthiopie...)"
+      },
+      moyen_orient: {
+        coords: [15.3, 44.2],
+        label: "Moyen-Orient (Yémen...)"
+      },
+      asie_sud: {
+        coords: [23.8, 90.4],
+        label: "Asie du Sud (Bangladesh...)"
+      },
+      afrique_centrale: {
+        coords: [-4.0, 21.7],
+        label: "Afrique centrale (RD Congo...)"
+      },
+      afrique_nord: {
+        coords: [9.1, 7.4],
+        label: "Afrique du Nord / Ouest"
+      }
+    };
+
+    async function loadDonationsOnMap() {
+      try {
+        const res = await fetch('/donations/map');
+        const data = await res.json();
+
+        // --- Mise à jour des marqueurs sur la carte ---
+        Object.keys(regionConfigs).forEach(key => {
+          const cfg = regionConfigs[key];
+          const totalMeals = data[key] || 0;
+
+          if (totalMeals <= 0) return;
+
+          const marker = L.circleMarker(cfg.coords, {
+            radius: Math.max(4, Math.sqrt(totalMeals)),
+            fillColor: "#ef4444",
+            color: "#dc2626",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.6
+          }).addTo(map);
+
+          marker.bindPopup(`
+            <strong>${cfg.label}</strong><br>
+            🍽️ ${totalMeals.toLocaleString()} repas financés
+          `);
+        });
+
+        // --- Mise à jour du tableau Repas par région ---
+        const tbody = document.querySelector('#regionsTable tbody');
+        if (tbody) {
+          tbody.innerHTML = '';
+
+          const labelsFr = {
+            afrique_ouest: "Afrique de l'Ouest",
+            afrique_est: "Afrique de l'Est",
+            moyen_orient: "Moyen-Orient",
+            asie_sud: "Asie du Sud",
+            afrique_centrale: "Afrique centrale",
+            afrique_nord: "Afrique du Nord / Ouest"
+          };
+
+          Object.keys(labelsFr).forEach(key => {
+            const total = data[key] || 0;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="padding:6px;">${labelsFr[key]}</td>
+              <td style="padding:6px;">${total.toLocaleString()}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      } catch (e) {
+        console.error('Error loading donations map:', e);
+      }
+    }
+
     loadDonationsOnMap();
     setInterval(loadDonationsOnMap, 20000);
   </script>
 </body>
 </html>
+

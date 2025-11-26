@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 from blockchain import Blockchain
 import time
+import uuid
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -12,9 +14,71 @@ blockchain = Blockchain()
 # Adresse pour les récompenses de mining
 MINING_ADDRESS = "nutrichain_miner_1"
 
+# ========== PROPOSALS EN MÉMOIRE ==========
+
+proposals = {}  # {id: {...}}
+
+@app.route("/proposals", methods=["POST"])
+def create_proposal():
+    data = request.get_json() or {}
+
+    title = data.get("title")
+    country = data.get("country")
+    city = data.get("city")
+    meals_target = data.get("meals_target")
+    description = data.get("description", "")
+
+    if not title or not country or not city or meals_target is None:
+        return jsonify({"error": "title, country, city, meals_target requis"}), 400
+
+    try:
+        meals_target = int(meals_target)
+    except Exception:
+        return jsonify({"error": "meals_target doit être un entier"}), 400
+
+    proposal_id = "prop_" + str(uuid.uuid4())[:8]
+
+    proposals[proposal_id] = {
+        "id": proposal_id,
+        "title": title,
+        "country": country,
+        "city": city,
+        "meals_target": meals_target,
+        "description": description,
+        "created_at": datetime.utcnow().isoformat()
+    }
+
+    return jsonify(proposals[proposal_id]), 201
+
+
+@app.route("/proposals", methods=["GET"])
+def list_proposals():
+    return jsonify(list(proposals.values()))
+
+
+# ========== DONATIONS MAP ==========
+
+donations_by_region = {
+    "afrique_ouest": 0,
+    "afrique_est": 0,
+    "moyen_orient": 0,
+    "asie_sud": 0,
+    "afrique_centrale": 0,
+    "afrique_nord": 0
+}
+
+@app.route("/donations/map", methods=["GET"])
+def donations_map():
+    """Retourner les repas financés par grande région pour la carte"""
+    return jsonify(donations_by_region)
+
+
+# ========== HOME / DASHBOARD ==========
+
 @app.route('/')
 def index():
     return render_template('dashboard.html')
+
 
 # ========== BLOCKCHAIN ==========
 
@@ -26,6 +90,7 @@ def get_chain():
         'length': len(blockchain.chain)
     })
 
+
 @app.route('/chain/validate', methods=['GET'])
 def validate_chain():
     """Vérifier l'intégrité de la blockchain"""
@@ -35,190 +100,96 @@ def validate_chain():
         'message': 'Blockchain valide' if is_valid else 'Blockchain corrompue'
     })
 
+
+@app.route('/stats', methods=['GET'])
+def get_stats():
+    """Statistiques globales pour le dashboard"""
+    chain_data = blockchain.get_chain_data()
+    total_blocks = len(chain_data)
+    total_transactions = sum(len(b.get('transactions', [])) for b in chain_data)
+    last_block_hash = chain_data[-1].get('hash') if chain_data else None
+
+    return jsonify({
+        'total_blocks': total_blocks,
+        'total_transactions': total_transactions,
+        'last_block_hash': last_block_hash
+    })
+
+
 # ========== TRANSACTIONS ==========
 
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():
     """Créer une nouvelle transaction (don)"""
-    values = request.get_json()
-    
+    values = request.get_json() or {}
+
     required = ['sender', 'recipient', 'amount']
     if not all(k in values for k in required):
         return jsonify({'error': 'Champs manquants'}), 400
-    
+
+    try:
+        amount = float(values['amount'])
+    except Exception:
+        return jsonify({'error': 'Montant invalide'}), 400
+
     index = blockchain.add_transaction(
         values['sender'],
         values['recipient'],
-        float(values['amount'])
+        amount
     )
-    
+
     return jsonify({
         'message': f'Transaction ajoutée au bloc {index}',
         'transaction': {
             'sender': values['sender'],
-            'recipient': values['recipient'],
-            'amount': values['amount']
+            'recipient': amount
         }
     }), 201
 
-@app.route('/transactions/pending', methods=['GET'])
-def get_pending_transactions():
-    """Récupérer les transactions en attente"""
-    return jsonify({
-        'transactions': blockchain.pending_transactions,
-        'count': len(blockchain.pending_transactions)
-    })
 
 # ========== MINING ==========
 
 @app.route('/mine', methods=['POST'])
-def mine():
-    """Miner un nouveau bloc"""
-    # Obtenir l'adresse du mineur (optionnel)
-    data = request.get_json() or {}
-    miner_address = data.get('miner_address', MINING_ADDRESS)
-    
-    # Miner le bloc
-    start_time = time.time()
-    new_block = blockchain.mine_pending_transactions(miner_address)
-    mining_time = time.time() - start_time
-    
-    return jsonify({
-        'message': 'Bloc miné avec succès',
-        'block': new_block.to_dict(),
-        'mining_time': f"{mining_time:.2f}s",
-        'reward': blockchain.mining_reward,
-        'miner': miner_address
-    }), 200
+def mine_block():
+    """Miner un nouveau bloc avec récompense de mining"""
+    # Récompense du mineur
+    blockchain.add_transaction("NETWORK", MINING_ADDRESS, 1)
 
-# ========== WALLET / BALANCE ==========
+    block = blockchain.mine_block()
 
-@app.route('/balance/<address>', methods=['GET'])
-def get_balance(address):
-    """Obtenir le solde d'une adresse"""
-    balance = blockchain.calculate_balance(address)
+    if not block:
+        return jsonify({'error': 'Aucune transaction à miner'}), 400
+
     return jsonify({
-        'address': address,
-        'balance': balance,
-        'unit': 'NUTRI'
+        'message': 'Nouveau bloc miné',
+        'index': block.index,
+        'hash': block.hash,
+        'previous_hash': block.previous_hash,
+        'transactions': [tx.to_dict() for tx in block.transactions],
+        'timestamp': block.timestamp,
+        'nonce': block.nonce
     })
 
-# ========== STATS ==========
 
-@app.route('/stats', methods=['GET'])
-def get_stats():
-    """Statistiques globales"""
-    total_blocks = len(blockchain.chain)
-    total_transactions = sum(len(block.transactions) for block in blockchain.chain)
-    pending_tx = len(blockchain.pending_transactions)
-    
-    return jsonify({
-        'total_blocks': total_blocks,
-        'total_transactions': total_transactions,
-        'pending_transactions': pending_tx,
-        'difficulty': blockchain.difficulty,
-        'mining_reward': blockchain.mining_reward,
-        'last_block_hash': blockchain.get_latest_block().hash
-    })
+# ========== STAKING NUTRI (local) ==========
 
-# ========== DONATIONS MAP (par région) ==========
-@app.route('/donations/map', methods=['GET'])
-def donations_map():
-    """Agrège les dons par grande région pour la carte"""
-    # Totaux temporaires par région logique
-    regions_totals = {
-        "afrique_ouest": 0.0,
-        "afrique_est": 0.0,
-        "moyen_orient": 0.0,
-        "asie_sud": 0.0,
-        "afrique_centrale": 0.0,
-        "afrique_nord": 0.0
-    }
+staking_pool = {}  # { address: montant_total_staké }
 
-    # Parcourir toute la chaîne et les pending
-    all_txs = []
-    for block in blockchain.chain:
-        all_txs.extend(block.transactions)
-    all_txs.extend(blockchain.pending_transactions)
-
-    for tx in all_txs:
-        recipient = tx.get('recipient', '')
-        amount = float(tx.get('amount', 0))
-
-        if not recipient.startswith("food_program_"):
-            continue
-
-        region = recipient.replace("food_program_", "")
-
-        if region in ("senegal", "afrique_ouest"):
-            regions_totals["afrique_ouest"] += amount
-        elif region in ("ethiopie", "afrique_est"):
-            regions_totals["afrique_est"] += amount
-        elif region in ("yemen", "moyen_orient"):
-            regions_totals["moyen_orient"] += amount
-        elif region in ("bangladesh", "asie_sud"):
-            regions_totals["asie_sud"] += amount
-        elif region in ("rdc", "rd_congo", "afrique_centrale"):
-            regions_totals["afrique_centrale"] += amount
-        elif region in ("nigeria", "afrique_nord"):
-            regions_totals["afrique_nord"] += amount
-
-    return jsonify(regions_totals)
-
-
-# ========== DONATIONS (spécifique humanitaire) ==========
-
-@app.route('/donate', methods=['POST'])
-def donate():
-    """Faire un don (alias de transaction)"""
-    values = request.get_json() or {}
-
-    donor = values.get('donor', 'anonymous')
-    region = values.get('region', 'global')
-    amount = float(values.get('amount', 0))
-
-    if amount <= 0:
-        return jsonify({'error': 'Montant invalide'}), 400
-
-    # Si le donateur n'est pas "anonymous", vérifier le solde NUTRI
-    if donor != 'anonymous':
-        balance = blockchain.calculate_balance(donor)
-        if balance < amount:
-            return jsonify({
-                'error': 'Solde insuffisant',
-                'balance': balance,
-                'required': amount
-            }), 400
-
-    blockchain.add_transaction(
-        sender=donor,
-        recipient=f"food_program_{region}",
-        amount=amount
-    )
-
-    return jsonify({
-        'message': f'{amount} NUTRI donnés = {amount} repas',
-        'donor': donor,
-        'region': region,
-        'meals': amount
-    }), 201
-
-
-# ========== STAKING ==========
-
-staking_pool = {}
-
-staking_pool = {}
 
 @app.route('/stake', methods=['POST'])
-def stake():
-    """Staker des tokens"""
-    values = request.get_json() or {}
-    address = values.get('address')
-    amount = float(values.get('amount', 0))
+def stake_tokens():
+    """Staker des NUTRI sur la blockchain locale"""
+    data = request.get_json() or {}
+    address = data.get('address')
+    amount = data.get('amount')
 
-    if not address:
-        return jsonify({'error': 'Adresse manquante'}), 400
+    if not address or amount is None:
+        return jsonify({'error': 'Adresse ou montant manquant'}), 400
+
+    try:
+        amount = float(amount)
+    except Exception:
+        return jsonify({'error': 'Montant invalide'}), 400
 
     if amount <= 0:
         return jsonify({'error': 'Montant invalide'}), 400
@@ -248,9 +219,9 @@ def stake():
 @app.route('/stake/<address>', methods=['GET'])
 def get_stake(address):
     """Voir le staking d'une adresse"""
-    staked = staking_pool.get(address, 0)
+    staked = staking_pool.get(address, 0.0)
     estimated_rewards = staked * 0.0725  # 7.25% APY
-    
+
     return jsonify({
         'address': address,
         'staked': staked,
@@ -258,14 +229,82 @@ def get_stake(address):
         'apy': 7.25
     })
 
-if __name__ == '__main__':
-    print("\n" + "="*50)
-    print("🍽️  NutriChain - Blockchain Humanitaire")
-    print("="*50)
-    print(f"📧 Contact: contact@nutrichain.org")
-    print(f"🌐 Dashboard: http://localhost:5000")
-    print(f"📊 API: http://localhost:5000/chain")
-    print(f"⛏️  Mining: POST http://localhost:5000/mine")
-    print("="*50 + "\n")
-    
-    app.run(host='0.0.0.0', port=5000, debug=True)
+
+# ========== DON HUMANITAIRE (REGION + PROPOSAL) ==========
+
+@app.route('/donate', methods=['POST'])
+def donate():
+    """
+    Don humanitaire:
+    - wallet_address : adresse NutriCoin (obligatoire)
+    - donor_label : pseudo optionnel (affiché publiquement si fourni)
+    - region : région ciblée (afrique_ouest, asie_sud, ...) ou "auto"
+    - proposal_id : optionnel, si le don cible une proposal précise
+    - amount : montant du don (float)
+    """
+    data = request.get_json() or {}
+
+    wallet_address = data.get('wallet_address')
+    donor_label = data.get('donor_label')  # purement décoratif / off-chain
+    region = data.get('region', 'auto')
+    proposal_id = data.get('proposal_id')
+    amount = data.get('amount')
+
+    if not wallet_address:
+        return jsonify({'error': 'wallet_address requis pour faire un don'}), 400
+
+    if amount is None:
+        return jsonify({'error': 'Montant manquant'}), 400
+
+    try:
+        amount = float(amount)
+    except Exception:
+        return jsonify({'error': 'Montant invalide'}), 400
+
+    if amount <= 0:
+        return jsonify({'error': 'Montant invalide'}), 400
+
+    valid_regions = list(donations_by_region.keys())
+
+    # 1) Si proposal_id est donné, on essaie de l'utiliser
+    target_proposal = None
+    if proposal_id:
+        target_proposal = proposals.get(proposal_id)
+        if not target_proposal:
+            return jsonify({'error': 'proposal_id inconnu'}), 400
+
+        if region == 'auto' or region == 'global':
+            region = min(valid_regions, key=lambda r: donations_by_region.get(r, 0.0))
+
+    # 2) Sinon, on reste en mode "région"
+    if not proposal_id:
+        if region == 'auto' or region == 'global':
+            region = min(valid_regions, key=lambda r: donations_by_region.get(r, 0.0))
+        else:
+            if region not in valid_regions:
+                return jsonify({'error': 'Région inconnue'}), 400
+
+    # Conversion don -> repas
+    meals = amount  # 1 NUTRI = 1 repas
+
+    donations_by_region[region] = donations_by_region.get(region, 0.0) + meals
+
+    # Mettre à jour la proposal si ciblée
+    if target_proposal is not None:
+        funded = target_proposal.get("meals_funded", 0)
+        target_proposal["meals_funded"] = funded + meals
+
+    return jsonify({
+        'message': f'Don de {amount} NUTRI reçu pour la région {region}',
+        'wallet_address': wallet_address,
+        'donor_label': donor_label,
+        'region': region,
+        'amount': amount,
+        'meals_funded': meals,
+        'proposal_id': proposal_id,
+        'donations_by_region': donations_by_region,
+        'proposal': target_proposal
+    }), 201
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
