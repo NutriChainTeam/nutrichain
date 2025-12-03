@@ -1,6 +1,7 @@
 import os
 import requests
 from flask import Flask, jsonify, request, render_template
+from flask_cors import CORS
 
 # ================= HEDERA SDK =================
 
@@ -18,6 +19,9 @@ except Exception as e:
     print("Hedera SDK non disponible sur ce runtime:", e)
 
 app = Flask(__name__)
+
+CORS(app, resources={r"/*": {"origins": "*"}})
+
 
 # ========== CONFIG HEDERA ==========
 HEDERA_NETWORK = "testnet"  # testnet pour dev
