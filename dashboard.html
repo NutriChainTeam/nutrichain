@@ -54,16 +54,42 @@
                         <h2 class="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wide">
                             Navigation
                         </h2>
+
+                        <!-- liens historiques -->
                         <a href="/stats" class="nav-item active">Statistiques</a>
                         <a href="/chain" class="nav-item">Chaîne / trésorerie</a>
                         <a href="/donations/map" class="nav-item">Carte des dons</a>
+
+                        <!-- nouvelles options -->
+                        <hr class="my-3 border-slate-800">
+                        <a href="/donate" class="nav-item">Faire un don</a>
+                        <a href="/stake" class="nav-item">Staker NUTRI</a>
+                        <a href="/governance" class="nav-item">Gouvernance DAO</a>
                     </aside>
 
                     <!-- SECTIONS -->
                     <main class="main-content">
-                        <!-- SECTION STATS -->
+                        <!-- SECTION STATS (corrigée + gouvernance) -->
                         <section id="statsSection" class="section">
                             <h2 class="text-xl font-semibold mb-4 text-white">Vue d’ensemble</h2>
+
+                            <!-- Boutons d’action -->
+                            <div class="flex flex-wrap gap-3 mb-4">
+                                <a href="/donate" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white flex items-center gap-2">
+                                    <i data-lucide="donate" class="w-4 h-4"></i>
+                                    Faire un don
+                                </a>
+                                <a href="/stake" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white flex items-center gap-2">
+                                    <i data-lucide="layers" class="w-4 h-4"></i>
+                                    Staker des NUTRI
+                                </a>
+                                <a href="/governance" class="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                    <i data-lucide="plug-zap" class="w-4 h-4"></i>
+                                    Gouvernance / Wallet
+                                </a>
+                            </div>
+
+                            <!-- STATS D'ORIGINE -->
                             <div class="stats-grid">
                                 <div class="stat-card">
                                     <h3 class="text-slate-400 text-sm">Repas distribués</h3>
@@ -89,14 +115,84 @@
                                     </p>
                                 </div>
                             </div>
+
+                            <!-- BLOCS GOUVERNANCE (résumé) -->
+                            <div class="stats-grid" style="margin-top: 1.5rem;">
+                                <!-- Votre Adresse -->
+                                <div class="stat-card">
+                                    <h3 class="text-slate-400 text-sm">Votre Adresse</h3>
+                                    <div class="text-sm font-mono text-slate-300 mt-1" id="userAddress">
+                                        Non Connecté
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1">
+                                        Connectez un wallet compatible pour voter et staker.
+                                    </p>
+                                </div>
+
+                                <!-- Prix NUTRI (USD) -->
+                                <div class="stat-card">
+                                    <h3 class="text-slate-400 text-sm">Prix NUTRI (USD)</h3>
+                                    <div class="text-2xl font-semibold text-white mt-1" id="nutri-price">
+                                        Chargement...
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1" id="nutriCoinSource">
+                                        Valeur indicative du token NUTRI.
+                                    </p>
+                                </div>
+
+                                <!-- APY simulé -->
+                                <div class="stat-card">
+                                    <h3 class="text-slate-400 text-sm">Taux de Rendement Annuel</h3>
+                                    <div class="text-2xl font-semibold text-emerald-400 mt-1" id="annualYield">
+                                        7.25%
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1">
+                                        APY simulé pour le staking NUTRI.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="stats-grid" style="margin-top: 1rem;">
+                                <!-- Vos NUTRI votants -->
+                                <div class="stat-card">
+                                    <h3 class="text-slate-400 text-sm">Vos NUTRI votants</h3>
+                                    <div class="text-2xl font-semibold text-white mt-1" id="voting-power">
+                                        0.00
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1" id="userTokens">
+                                        NUTRI pris en compte dans la gouvernance.
+                                    </p>
+                                </div>
+
+                                <!-- Total des propositions soumises -->
+                                <div class="stat-card">
+                                    <h3 class="text-slate-400 text-sm">Total des propositions soumises</h3>
+                                    <div class="text-2xl font-semibold text-orange-400 mt-1" id="totalProposalsCount">
+                                        0
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1">
+                                        Propositions actives et passées dans la DAO.
+                                    </p>
+                                </div>
+
+                                <!-- Message Firestore (mode statique) -->
+                                <div class="stat-card">
+                                    <h3 class="text-slate-400 text-sm">État de la connexion DAO</h3>
+                                    <div class="text-sm font-semibold text-red-400 mt-1" id="fallback-error-message">
+                                        ERREUR DE CONNEXION FIRESTORE
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1">
+                                        Données de gouvernance affichées en mode statique (simulation).
+                                    </p>
+                                </div>
+                            </div>
                         </section>
 
                         <!-- SECTION CHAIN -->
                         <section id="chainSection" class="section" style="display:none;">
                             <h2 class="text-xl font-semibold mb-4 text-white">Chaîne NCHAIN / blockchain</h2>
                             <p class="text-sm text-slate-400 mb-3">
-                                Ici, tu pourras détailler les transactions NCHAIN, les comptes de trésorerie,
-                                et les liens vers les explorateurs Hedera.
+                                Détail des comptes trésoriers NCHAIN et intégration Mirror Node.
                             </p>
                             <ul class="list-disc list-inside text-sm text-slate-300 space-y-1">
                                 <li>ID du token NCHAIN : 0.0.10136204</li>
@@ -109,8 +205,7 @@
                         <section id="mapSection" class="section" style="display:none;">
                             <h2 class="text-xl font-semibold mb-4 text-white">Carte des dons & cantines</h2>
                             <p class="text-sm text-slate-400">
-                                Cette carte illustre quelques localisations de projets alimentaires où
-                                les dons NCHAIN se traduisent en repas distribués.
+                                Localisation de quelques projets alimentaires soutenus par les dons.
                             </p>
                             <div id="map"></div>
                         </section>
@@ -163,9 +258,11 @@
         function showSection(section) {
             document.querySelectorAll('.section').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(section + 'Section').style.display = 'block';
-            event.target.classList.add('active');
-
+            const target = document.getElementById(section + 'Section');
+            if (target) target.style.display = 'block';
+            if (event && event.target && event.target.classList) {
+                event.target.classList.add('active');
+            }
             if (section === 'map' && !map) {
                 initMap();
             }
@@ -225,7 +322,9 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             loadNchainBalance();
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         });
     </script>
 </body>

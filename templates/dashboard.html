@@ -1,1028 +1,481 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>NutriChain - Blockchain Humanitaire</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>NutriChain Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="/static/css/alerts.css">
-  <link rel="stylesheet" href="/static/css/wallet.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Leaflet -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+    />
 
-  <!-- Web3 -->
-  <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <!-- Lucide icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: linear-gradient(135deg, #121212, #1e1e2f);
-      color: #e5e5e5;
-      min-height: 100vh;
-      padding: 20px;
-    }
-
-    .container { max-width: 1200px; margin: 0 auto; }
-
-    header {
-      background: rgba(15, 23, 42, 0.9);
-      padding: 20px;
-      border-radius: 16px;
-      margin-bottom: 30px;
-      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      backdrop-filter: blur(16px);
-    }
-
-    .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 20px;
-    }
-
-    h1 {
-      color: #f9fafb;
-      font-size: 28px;
-    }
-
-    .header-subtitle {
-      color: #9ca3af;
-      font-size: 13px;
-      margin-top: 4px;
-    }
-
-    .language-selector button {
-      padding: 6px 10px;
-      margin-left: 4px;
-      border-radius: 999px;
-      border: 1px solid #4b5563;
-      background: transparent;
-      color: #e5e7eb;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .language-selector .active {
-      background: #6366f1;
-      border-color: #6366f1;
-    }
-
-    .wallet-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 13px;
-    }
-
-    .wallet-section #walletButton {
-      padding: 8px 14px;
-      border-radius: 999px;
-      border: none;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: #f9fafb;
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-
-    .stat-card {
-      background: rgba(15, 23, 42, 0.9);
-      padding: 20px;
-      border-radius: 14px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.9);
-    }
-
-    .stat-card h3 {
-      color: #9ca3af;
-      font-size: 14px;
-      margin-bottom: 10px;
-    }
-
-    .stat-card .value {
-      color: #e5e7eb;
-      font-size: 30px;
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-
-    .stat-card .hint {
-      color: #6b7280;
-      font-size: 12px;
-    }
-
-    .action-section {
-      background: rgba(15, 23, 42, 0.9);
-      padding: 24px;
-      border-radius: 14px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      margin-bottom: 24px;
-    }
-
-    .action-section h2 {
-      color: #e5e7eb;
-      margin-bottom: 12px;
-    }
-
-    .action-section p {
-      color: #9ca3af;
-      font-size: 14px;
-      margin-bottom: 16px;
-    }
-
-    .input-group { margin-bottom: 15px; }
-
-    .input-group label {
-      display: block;
-      color: #d1d5db;
-      margin-bottom: 6px;
-      font-size: 14px;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid #4b5563;
-      background: rgba(15, 23, 42, 0.9);
-      color: #e5e7eb;
-      font-size: 15px;
-    }
-
-    .input-group input:focus {
-      outline: none;
-      border-color: #6366f1;
-    }
-
-    .btn {
-      padding: 11px 20px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: #f9fafb;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 15px;
-      display: inline-block;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.6);
-    }
-
-    .sections-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 24px;
-      margin-bottom: 30px;
-    }
-
-    .map-section {
-      background: rgba(15, 23, 42, 0.9);
-      padding: 20px;
-      border-radius: 14px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      margin-bottom: 24px;
-    }
-
-    .map-section h2 {
-      color: #e5e7eb;
-      font-size: 20px;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    #map {
-      height: 420px;
-      border-radius: 12px;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.8);
-    }
-
-    footer {
-      background: rgba(15, 23, 42, 0.9);
-      padding: 24px;
-      border-radius: 14px;
-      margin-top: 30px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-      border: 1px solid rgba(148, 163, 184, 0.5);
-    }
-
-    .footer-content {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: 22px;
-      margin-bottom: 12px;
-    }
-
-    .footer-section h3 {
-      color: #e5e7eb;
-      font-size: 16px;
-      margin-bottom: 10px;
-    }
-
-    .footer-section p,
-    .footer-section a {
-      color: #9ca3af;
-      font-size: 13px;
-      text-decoration: none;
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    .footer-section a:hover {
-      color: #a5b4fc;
-    }
-
-    .footer-bottom {
-      text-align: center;
-      padding-top: 10px;
-      border-top: 1px solid #4b5563;
-      color: #6b7280;
-      font-size: 13px;
-    }
-
-    @media (max-width: 768px) {
-      body { padding: 10px; }
-      header { padding: 16px; }
-    }
-  </style>
+    <style>
+        .nav-item {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            color: #9ca3af;
+        }
+        .nav-item:hover {
+            background: #111827;
+            color: #e5e7eb;
+        }
+        .nav-item.active {
+            background: #111827;
+            color: #f97316;
+        }
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 220px minmax(0, 1fr);
+            gap: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .sidebar {
+            border-right: 1px solid #1f2933;
+            padding-right: 1rem;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid #1f2933;
+                padding-bottom: 1rem;
+                margin-bottom: 1.5rem;
+            }
+        }
+        .main-content {
+            min-height: 0;
+        }
+        .stats-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+        .stat-card {
+            background: #020617;
+            border: 1px solid #1f2937;
+            border-radius: 0.75rem;
+            padding: 0.9rem 1rem;
+        }
+        #map {
+            width: 100%;
+            height: 360px;
+            border-radius: 0.75rem;
+            border: 1px solid #1f2937;
+            overflow: hidden;
+        }
+    </style>
 </head>
-<body>
-  <div id="alertContainer"></div>
-
-  <div class="container">
+<body class="bg-slate-950 text-slate-100">
+<div class="min-h-screen flex flex-col">
     <!-- HEADER -->
-    <header>
-      <div class="header-content">
-        <div>
-          <h1 data-i18n="title">NutriChain - Blockchain Humanitaire</h1>
-          <p class="header-subtitle">
-            Chaque token = 1 repas. Dons, staking et transparence en temps réel.
-          </p>
+    <header class="border-b border-[#30363d] bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+                    <span class="text-emerald-400 font-bold text-lg">N</span>
+                </div>
+                <div>
+                    <h1 class="text-lg font-semibold tracking-tight text-white">NutriChain Dashboard</h1>
+                    <p class="text-xs text-slate-400">
+                        Suivi de la trésorerie NCHAIN, des blocs et de l’impact repas distribués
+                    </p>
+                </div>
+            </div>
         </div>
-
-        <div class="language-selector">
-          <button onclick="changeLanguage('fr')" class="active">FR</button>
-          <button onclick="changeLanguage('en')">EN</button>
-          <button onclick="changeLanguage('es')">ES</button>
-          <button onclick="changeLanguage('ar')">AR</button>
-        </div>
-
-        <div class="wallet-section">
-          <button id="walletButton" onclick="connectWallet()" data-i18n="connectwallet">
-            Connecter Wallet
-          </button>
-          <span id="walletAddress" style="display:none;"></span>
-          <span id="userBalance"></span>
-        </div>
-      </div>
     </header>
 
-    <!-- STATS GRID -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3 data-i18n="mealsdistributed">Repas distribués</h3>
-        <div class="value" id="mealsCount">12 847</div>
-        <div class="hint">Basé sur les dons NUTRI</div>
-      </div>
-      <div class="stat-card">
-        <h3 data-i18n="totaldonations">Total des dons</h3>
-        <div class="value" id="donationsCount">15 320 NUTRI</div>
-        <div class="hint">Depuis le lancement du réseau</div>
-      </div>
-      <div class="stat-card">
-        <h3 data-i18n="totalblocks">Blocs minés</h3>
-        <div class="value" id="blocksCount">-</div>
-        <div class="hint" id="lastHashHint">Dernier bloc synchronisé</div>
-      </div>
-      <div class="stat-card">
-        <h3 data-i18n="transactions">Transactions</h3>
-        <div class="value" id="txCount">-</div>
-        <div class="hint">Incluant les dons humanitaires</div>
-      </div>
+    <!-- CONTENU PRINCIPAL -->
+    <div class="flex-1 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-6">
+            <div class="dashboard-layout">
+                <!-- SIDEBAR -->
+                <aside class="sidebar">
+                    <h2 class="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wide">
+                        Navigation
+                    </h2>
+
+                    <a href="#statsSection" class="nav-item active">Statistiques</a>
+                    <a href="#chainSection" class="nav-item">Chaîne / trésorerie</a>
+                    <a href="#mapSection" class="nav-item">Carte des dons</a>
+
+                    <hr class="my-3 border-slate-800">
+
+                    <a href="/donate" class="nav-item">Faire un don</a>
+                    <a href="/stake" class="nav-item">Staker NUTRI</a>
+                    <a href="/governance" class="nav-item">Gouvernance DAO</a>
+                </aside>
+
+                <!-- MAIN -->
+                <main class="main-content">
+                    <!-- SECTION STATS -->
+                    <section id="statsSection" class="section">
+                        <h2 class="text-xl font-semibold mb-4 text-white">Vue d’ensemble</h2>
+
+                        <!-- Boutons d’action -->
+                        <div class="flex flex-wrap gap-3 mb-4">
+                            <a href="/donate"
+                               class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white flex items-center gap-2">
+                                <i data-lucide="donate" class="w-4 h-4"></i>
+                                Faire un don
+                            </a>
+                            <a href="/stake"
+                               class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white flex items-center gap-2">
+                                <i data-lucide="layers" class="w-4 h-4"></i>
+                                Staker des NUTRI
+                            </a>
+                            <button
+                              id="connectWalletBtn"
+                              class="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                <i data-lucide="plug-zap" class="w-4 h-4"></i>
+                                Connecter un wallet Hedera
+                            </button>
+                        </div>
+
+                        <!-- STATS PRINCIPALES -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <h3 class="text-slate-400 text-sm">Repas distribués</h3>
+                                <div class="text-2xl font-semibold text-white mt-1" id="mealsCount">12 847</div>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    Basé sur les dons NCHAIN déclarés
+                                </p>
+                            </div>
+                            <div class="stat-card">
+                                <h3 class="text-slate-400 text-sm">Trésorerie NCHAIN</h3>
+                                <div class="text-2xl font-semibold text-emerald-400 mt-1" id="nchain-balance">Chargement...</div>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    Solde du compte 0.0.10128148
+                                </p>
+                            </div>
+                            <div class="stat-card">
+                                <h3 class="text-slate-400 text-sm">Impact estimé</h3>
+                                <div class="text-2xl font-semibold text-orange-400 mt-1">
+                                    <span id="impactMeals">–</span> repas
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    Conversion indicative NCHAIN → repas
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- RÉSUMÉ GOUVERNANCE -->
+                        <div class="stats-grid" style="margin-top: 1.5rem;">
+                            <div class="stat-card">
+                                <h3 class="text-slate-400 text-sm">Votre Adresse</h3>
+                                <div class="text-sm font-mono text-slate-300 mt-1" id="userAddress">
+                                    Non Connecté
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    Connectez un wallet compatible pour participer à la gouvernance.
+                                </p>
+                            </div>
+
+                            <div class="stat-card">
+                                <h3 class="text-slate-400 text-sm">Prix NUTRI (USD)</h3>
+                                <div class="text-2xl font-semibold text-white mt-1" id="nutri-price">
+                                    NA
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1" id="nutriCoinSource">
+                                    Valeur indicative du token NUTRI.
+                                </p>
+                            </div>
+
+                            <div class="stat-card">
+                                <h3 class="text-slate-400 text-sm">Taux de Rendement Annuel</h3>
+                                <div class="text-2xl font-semibold text-emerald-400 mt-1" id="annualYield">
+                                    7.25%
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    APY simulé pour le staking de NUTRI.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="stats-grid" style="margin-top: 1rem;">
+                            <div class="stat-card">
+                                <h3 class="text-slate-400 text-sm">Vos NUTRI votants</h3>
+                                <div class="text-2xl font-semibold text-white mt-1" id="voting-power">
+                                    0.00
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1" id="userTokens">
+                                    NUTRI pris en compte dans la gouvernance.
+                                </p>
+                            </div>
+
+                            <div class="stat-card">
+                                <h3 class="text-slate-400 text-sm">Total des propositions soumises</h3>
+                                <div class="text-2xl font-semibold text-orange-400 mt-1" id="totalProposalsCount">
+                                    0
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    Historique global des propositions NutriChain.
+                                </p>
+                            </div>
+
+                            <div class="stat-card">
+                                <h3 class="text-slate-400 text-sm">État de la connexion Firestore</h3>
+                                <div class="text-sm font-semibold text-red-400 mt-1" id="fallback-error-message">
+                                    Mode statique (simulation DAO)
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    Le chargement en temps réel peut être désactivé en dev.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- BLOCS RÉCENTS & TOTAUX PAR RÉGION -->
+                        <div class="stats-grid" style="margin-top: 1.5rem;">
+                            <!-- Blocs récents -->
+                            <div class="stat-card col-span-1 md:col-span-2">
+                                <h3 class="text-slate-400 text-sm mb-2">Blocs récents NutriChain</h3>
+                                <p class="text-xs text-slate-500 mb-2">
+                                    Aperçu des derniers blocs minés sur NutriChain.
+                                </p>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full text-xs text-slate-300 border border-slate-800 rounded-lg">
+                                        <thead class="bg-slate-900 text-slate-400">
+                                        <tr>
+                                            <th class="px-2 py-1 text-left">#</th>
+                                            <th class="px-2 py-1 text-left">Hash</th>
+                                            <th class="px-2 py-1 text-left">Tx</th>
+                                            <th class="px-2 py-1 text-left">Date</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="blocksTableBody">
+                                        <tr>
+                                            <td class="px-2 py-1 border-t border-slate-800">1</td>
+                                            <td class="px-2 py-1 border-t border-slate-800 text-xs">0xabc...123</td>
+                                            <td class="px-2 py-1 border-t border-slate-800">3</td>
+                                            <td class="px-2 py-1 border-t border-slate-800">2025-12-03 14:00</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-2 py-1 border-t border-slate-800">2</td>
+                                            <td class="px-2 py-1 border-t border-slate-800 text-xs">0xdef...456</td>
+                                            <td class="px-2 py-1 border-t border-slate-800">5</td>
+                                            <td class="px-2 py-1 border-t border-slate-800">2025-12-03 13:55</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-2 py-1 border-t border-slate-800">3</td>
+                                            <td class="px-2 py-1 border-t border-slate-800 text-xs">0xghi...789</td>
+                                            <td class="px-2 py-1 border-t border-slate-800">2</td>
+                                            <td class="px-2 py-1 border-t border-slate-800">2025-12-03 13:50</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Totaux par région -->
+                            <div class="stat-card">
+                                <h3 class="text-slate-400 text-sm mb-2">Totaux par région</h3>
+                                <p class="text-xs text-slate-500 mb-2">
+                                    Totaux agrégés à partir des dons enregistrés sur NutriChain.
+                                </p>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full text-xs text-slate-300 border border-slate-800 rounded-lg">
+                                        <thead class="bg-slate-900 text-slate-400">
+                                        <tr>
+                                            <th class="px-2 py-1 text-left">Région</th>
+                                            <th class="px-2 py-1 text-right">Repas financés (NUTRI)</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="regionsTableBody">
+                                        <tr>
+                                            <td class="px-2 py-1 border-t border-slate-800">Afrique Ouest</td>
+                                            <td class="px-2 py-1 border-t border-slate-800 text-right">0</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-2 py-1 border-t border-slate-800">Afrique Est</td>
+                                            <td class="px-2 py-1 border-t border-slate-800 text-right">0</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-2 py-1 border-t border-slate-800">Moyen-Orient</td>
+                                            <td class="px-2 py-1 border-t border-slate-800 text-right">0</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p class="text-[11px] text-slate-500 mt-2">
+                                    Chaque token = 1 repas distribué.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- SECTION CHAIN -->
+                    <section id="chainSection" class="section mt-10">
+                        <h2 class="text-xl font-semibold mb-4 text-white">Chaîne NCHAIN / blockchain</h2>
+                        <p class="text-sm text-slate-400 mb-3">
+                            Détails sur le token NCHAIN, le compte trésorier et la lecture via Mirror Node.
+                        </p>
+                        <ul class="list-disc list-inside text-sm text-slate-300 space-y-1">
+                            <li>ID du token NCHAIN : 0.0.10136204</li>
+                            <li>Compte trésorier suivi : 0.0.10128148</li>
+                            <li>Lecture des soldes via Mirror Node (lecture seule)</li>
+                        </ul>
+                    </section>
+
+                    <!-- SECTION MAP -->
+                    <section id="mapSection" class="section mt-10">
+                        <h2 class="text-xl font-semibold mb-4 text-white">Carte des dons & cantines</h2>
+                        <p class="text-sm text-slate-400 mb-3">
+                            Localisation de quelques projets alimentaires soutenus par les dons NCHAIN.
+                        </p>
+                        <div id="map"></div>
+                    </section>
+                </main>
+            </div>
+
+            <!-- FOOTER -->
+            <footer class="mt-12 pt-8 border-t border-[#30363d] text-center text-sm text-gray-400">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <h4 class="text-white font-semibold mb-3">À propos</h4>
+                        <p class="text-gray-400">
+                            NutriChain relie la transparence des tokens NCHAIN à l’impact réel en repas,
+                            avec une gouvernance décentralisée et vérifiable.
+                        </p>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-semibold mb-3">Ressources</h4>
+                        <ul class="text-gray-400 space-y-1">
+                            <li>Documentation technique</li>
+                            <li>Explorateur Hedera</li>
+                            <li>Interface de gouvernance</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-semibold mb-3">Contact</h4>
+                        <p class="text-gray-400 text-sm flex items-center justify-center">
+                            <i data-lucide="mail" class="w-4 h-4 mr-2"></i>contact@nutrichain.org
+                        </p>
+                    </div>
+                </div>
+                <div class="border-t border-[#30363d] pt-6">
+                    <p>© 2025 NutriChain. Open Source MIT License.</p>
+                </div>
+            </footer>
+        </div>
     </div>
+</div>
 
-    <!-- DERNIERS BLOCS -->
-    <section class="action-section">
-      <h2 style="margin-bottom: 10px;">Derniers blocs</h2>
-      <p style="font-size: 13px; color: #9ca3af; margin-bottom: 12px;">
-        Aperçu des 5 derniers blocs minés sur NutriChain.
-      </p>
-      <div style="overflow-x:auto;">
-        <table id="blocksTable" style="width:100%; border-collapse:collapse; font-size:13px;">
-          <thead>
-            <tr style="text-align:left; border-bottom:1px solid #374151;">
-              <th style="padding:8px;">#</th>
-              <th style="padding:8px;">Hash</th>
-              <th style="padding:8px;">Tx</th>
-              <th style="padding:8px;">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-          </tbody>
-        </table>
-      </div>
-    </section>
+<!-- Leaflet JS -->
+<script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin="">
+</script>
 
-    <!-- SECTION CARTE -->
-    <div class="map-section">
-      <h2>
-        <span data-i18n="maptitle">Carte Mondiale des Aides</span>
-      </h2>
-      <div id="map"></div>
-    </div>
+<script>
+    let map;
 
-    <!-- RÉSUMÉ REPAS PAR RÉGION -->
-    <section class="action-section">
-      <h2 style="margin-bottom: 10px;">Repas financés par région</h2>
-      <p style="font-size: 13px; color: #9ca3af; margin-bottom: 12px;">
-        Totaux agrégés à partir des dons enregistrés sur NutriChain.
-      </p>
-      <div style="overflow-x:auto;">
-        <table id="regionsTable" style="width:100%; border-collapse:collapse; font-size:13px;">
-          <thead>
-            <tr style="text-align:left; border-bottom:1px solid #374151;">
-              <th style="padding:8px;">Région</th>
-              <th style="padding:8px;">Repas financés (NUTRI)</th>
-            </tr>
-          </thead>
-          <tbody>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ROW DON / STAKE -->
-    <div class="sections-row">
-      <!-- DON -->
-      <section class="action-section">
-        <h2 data-i18n="donate">Faire un don</h2>
-        <p>Chaque token = 1 repas distribué. Vos dons alimentent directement les programmes alimentaires.</p>
-        <div class="input-group">
-          <label for="donor">Donateur (adresse ou pseudo)</label>
-          <input type="text" id="donor" placeholder="0x123... ou 'anonyme'">
-        </div>
-        <div class="input-group">
-          <label for="region">Région ciblée</label>
-          <input type="text" id="region" placeholder="afrique, thailande, bangkok, paris...">
-        </div>
-        <div class="input-group">
-          <label for="donationAmount" data-i18n="amount">Montant (NUTRI)</label>
-          <input type="number" id="donationAmount" placeholder="10" min="1">
-        </div>
-        <button class="btn" onclick="handleHumanitarianDonation()" data-i18n="donatenow">
-          Donner maintenant
-        </button>
-        <div id="donationStatus" style="margin-top:10px; font-size:13px;"></div>
-      </section>
-
-      <!-- STAKING -->
-      <section class="action-section">
-        <h2 data-i18n="staketokens">Staker des tokens</h2>
-        <p style="margin-bottom: 15px; color: #9ca3af;">
-          <span data-i18n="apy">APY</span> 7.25% – Soutenez le réseau et obtenez des récompenses.
-        </p>
-        <div class="input-group">
-          <label for="stakeAmount" data-i18n="amount">Montant (NUTRI)</label>
-          <input type="number" id="stakeAmount" placeholder="100" min="1">
-        </div>
-        <button class="btn" onclick="handleStaking()" data-i18n="stakenow">
-          Staker maintenant
-        </button>
-        <div id="stakeStatus" style="margin-top:10px; font-size:13px;"></div>
-      </section>
-    </div>
-
-    <!-- FOOTER -->
-    <footer>
-      <div class="footer-content">
-        <div class="footer-section">
-          <h3>NutriChain</h3>
-          <p>Blockchain humanitaire pour une nutrition durable et transparente</p>
-          <p>📧 contact@nutrichain.org</p>
-        </div>
-
-        <div class="footer-section">
-          <h3>Liens Rapides</h3>
-          <a href="#" data-i18n="blockchain">Blockchain</a>
-          <a href="#" data-i18n="donate">Faire un don</a>
-          <a href="#" data-i18n="staketokens">Staking</a>
-          <a href="#">Documentation</a>
-        </div>
-
-        <div class="footer-section">
-          <h3>Communauté</h3>
-          <a href="#">GitHub</a>
-          <a href="#">Discord</a>
-          <a href="#">Twitter</a>
-          <a href="#">Telegram</a>
-        </div>
-
-        <div class="footer-section">
-          <h3>Statistiques</h3>
-          <p>Blocs minés: <span id="footerBlocks">-</span></p>
-          <p>Transactions: <span id="footerTx">-</span></p>
-          <p>Nœuds actifs: <span>3</span></p>
-        </div>
-      </div>
-
-      <div class="footer-bottom">
-        © 2025 NutriChain Team - Open Source | MIT License
-      </div>
-    </footer>
-  </div>
-
-  <!-- SCRIPTS -->
-  <script src="/static/js/i18n.js"></script>
-  <script src="/static/js/alerts.js"></script>
-  <script src="/static/js/wallet.js"></script>
-
-  <script>
-    // ====== CARTE MONDIALE ======
-    const map = L.map('map').setView([20, 0], 2);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // ====== STATS EN TEMPS RÉEL (/stats) ======
-    async function loadStats() {
-      try {
-        const response = await fetch('/stats');
-        const data = await response.json();
-
-        const footerBlocks = document.getElementById('footerBlocks');
-        const footerTx = document.getElementById('footerTx');
-        if (footerBlocks) footerBlocks.textContent = data.total_blocks ?? 0;
-        if (footerTx) footerTx.textContent = data.total_transactions ?? 0;
-
-        const blocksCount = document.getElementById('blocksCount');
-        const txCount = document.getElementById('txCount');
-        const lastHashHint = document.getElementById('lastHashHint');
-
-        if (blocksCount) blocksCount.textContent = data.total_blocks ?? 0;
-        if (txCount) txCount.textContent = data.total_transactions ?? 0;
-        if (lastHashHint && data.last_block_hash) {
-          lastHashHint.textContent = "Dernier hash: " + data.last_block_hash.slice(0, 12) + "...";
+    async function loadNchainBalance(defaultAccount = "0.0.10128148") {
+        try {
+            const res = await fetch(`/nchain_balance/${defaultAccount}`);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            const el = document.getElementById('nchain-balance');
+            if (el) {
+                el.textContent = `${data.balance.toLocaleString('fr-FR')} ${data.symbol}`;
+            }
+            const impactEl = document.getElementById('impactMeals');
+            if (impactEl) {
+                impactEl.textContent = data.balance.toLocaleString('fr-FR');
+            }
+        } catch (e) {
+            const el = document.getElementById('nchain-balance');
+            if (el) el.textContent = 'Erreur de chargement';
+            console.error('Error loading NCHAIN balance', e);
         }
-      } catch (error) {
-        console.error('Error loading stats:', error);
-      }
     }
 
-    loadStats();
-    setInterval(loadStats, 10000);
+    function initMap() {
+        map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
 
-    // ====== DON HUMANITAIRE (/donate) ======
-    async function handleHumanitarianDonation() {
-      const donor = document.getElementById('donor').value || 'anonymous';
-      const region = document.getElementById('region').value || 'global';
-      const amount = parseFloat(document.getElementById('donationAmount').value || 0);
-      const statusEl = document.getElementById('donationStatus');
+        const locations = [
+            {lat: 48.8566, lng: 2.3522, name: 'Paris, France', meals: 127, org: 'Restos du Cœur'},
+            {lat: 33.5138, lng: 36.2765, name: 'Damas, Syrie', meals: 50, org: 'Cantine Al-Amal'},
+            {lat: 9.0320, lng: 38.7469, name: 'Addis-Abeba, Éthiopie', meals: 89, org: 'Programme WFP'},
+            {lat: 28.6139, lng: 77.2090, name: 'New Delhi, Inde', meals: 234, org: 'Akshaya Patra'},
+            {lat: -23.5505, lng: -46.6333, name: 'São Paulo, Brésil', meals: 156, org: 'Banco de Alimentos'},
+            {lat: 36.8065, lng: 10.1815, name: 'Tunis, Tunisie', meals: 78, org: 'Croissant Rouge'},
+            {lat: 31.7917, lng: 35.2167, name: 'Jérusalem', meals: 42, org: 'Leket Israel'},
+            {lat: -4.0435, lng: 39.6682, name: 'Mombasa, Kenya', meals: 91, org: 'Food4Education'},
+            {lat: 23.8103, lng: 90.4125, name: 'Dhaka, Bangladesh', meals: 203, org: 'BRAC'},
+            {lat: 13.0827, lng: 80.2707, name: 'Chennai, Inde', meals: 167, org: 'Amma Canteen'},
+            {lat: 6.5244, lng: 3.3792, name: 'Lagos, Nigeria', meals: 112, org: 'Food Bank Nigeria'},
+            {lat: 33.8869, lng: 35.5131, name: 'Beyrouth, Liban', meals: 65, org: 'Secours Islamique'}
+        ];
 
-      if (amount <= 0) {
-        statusEl.textContent = "Montant invalide.";
-        statusEl.style.color = "#f87171";
-        return;
-      }
-
-      statusEl.textContent = "Envoi du don en cours...";
-      statusEl.style.color = "#93c5fd";
-
-      try {
-        const res = await fetch('/donate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ donor, region, amount })
+        locations.forEach(loc => {
+            const marker = L.marker([loc.lat, loc.lng]).addTo(map);
+            marker.bindPopup(`
+                <div style="color: #e5e7eb;">
+                    <strong>${loc.name}</strong><br>
+                    <span style="color: #10b981;">🍽️ ${loc.meals} repas distribués</span><br>
+                    <small>${loc.org}</small>
+                </div>
+            `);
         });
-        const data = await res.json();
-
-        if (!res.ok) {
-          statusEl.textContent = data.error || "Erreur lors du don.";
-          statusEl.style.color = "#f87171";
-          showAlert('error', data.error || "Erreur lors du don.");
-          return;
-        }
-
-        statusEl.textContent = data.message;
-        statusEl.style.color = "#4ade80";
-        showAlert('success', data.message);
-        loadStats();
-      } catch (e) {
-        console.error(e);
-        statusEl.textContent = "Erreur réseau lors du don.";
-        statusEl.style.color = "#f87171";
-        showAlert('error', "Erreur réseau lors du don.");
-      }
     }
 
-    // ====== STAKING (/stake) ======
-    async function handleStaking() {
-      const amount = parseFloat(document.getElementById('stakeAmount').value || 0);
-      const statusEl = document.getElementById('stakeStatus');
+    function setupWalletPrompt() {
+        const btn = document.getElementById('connectWalletBtn');
+        if (!btn) return;
 
-      if (!userAddress) {
-        statusEl.textContent = "Connecte d'abord ton wallet.";
-        statusEl.style.color = "#f97316";
-        showAlert('warning', "Connecte d'abord ton wallet.");
-        return;
-      }
-      if (amount <= 0) {
-        statusEl.textContent = "Montant invalide.";
-        statusEl.style.color = "#f87171";
-        return;
-      }
+        btn.addEventListener('click', async () => {
+            const current = document.getElementById('userAddress')?.textContent || '';
+            const accountId = prompt(
+                "Entrez votre compte Hedera (ex: 0.0.123456)",
+                current && current !== "Non Connecté" ? current : ""
+            );
+            if (!accountId) return;
 
-      statusEl.textContent = "Staking en cours...";
-      statusEl.style.color = "#93c5fd";
+            const addrEl = document.getElementById('userAddress');
+            if (addrEl) {
+                addrEl.textContent = accountId;
+            }
 
-      try {
-        const res = await fetch('/stake', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ address: userAddress, amount })
+            await loadNchainBalance(accountId);
         });
-        const data = await res.json();
+    }
 
-        if (!res.ok) {
-          statusEl.textContent = data.error || "Erreur lors du staking.";
-          statusEl.style.color = "#f87171";
-          showAlert('error', data.error || "Erreur lors du staking.");
-          return;
+    document.addEventListener('DOMContentLoaded', () => {
+        loadNchainBalance();
+        initMap();
+        setupWalletPrompt();
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
         }
-
-        statusEl.textContent =
-          `${data.message} | Total staké : ${data.total_staked} NUTRI | APY ${data.apy}%`;
-        statusEl.style.color = "#4ade80";
-        showAlert('success', data.message);
-        loadStats();
-      } catch (e) {
-        console.error(e);
-        statusEl.textContent = "Erreur réseau lors du staking.";
-        statusEl.style.color = "#f87171";
-        showAlert('error', "Erreur réseau lors du staking.");
-      }
-    }
-
-    // ====== DERNIERS BLOCS (/chain) ======
-    async function loadLatestBlocks() {
-      try {
-        const res = await fetch('/chain');
-        const data = await res.json();
-        const chain = data.chain || [];
-        const tbody = document.querySelector('#blocksTable tbody');
-        if (!tbody) return;
-
-        tbody.innerHTML = '';
-
-        const latest = chain.slice(-5).reverse();
-        latest.forEach(block => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td style="padding:6px;">${block.index}</td>
-            <td style="padding:6px; font-family:monospace;">
-              ${String(block.hash).slice(0, 12)}...
-            </td>
-            <td style="padding:6px;">${(block.transactions || []).length}</td>
-            <td style="padding:6px;">
-              ${new Date(block.timestamp * 1000).toLocaleString()}
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (e) {
-        console.error('Error loading blocks:', e);
-      }
-    }
-
-    loadLatestBlocks();
-    setInterval(loadLatestBlocks, 15000);
-
-    // ====== DONNÉES CARTE LIÉES AUX DONS (/donations/map) ======
-    const regionConfigs = {
-      afrique_ouest: {
-        coords: [14.5, -14.5],
-        label: "Afrique de l'Ouest (Sénégal, Nigeria...)"
-      },
-      afrique_est: {
-        coords: [9.0, 38.7],
-        label: "Afrique de l'Est (Éthiopie...)"
-      },
-      moyen_orient: {
-        coords: [15.3, 44.2],
-        label: "Moyen-Orient (Yémen...)"
-      },
-      asie_sud: {
-        coords: [23.8, 90.4],
-        label: "Asie du Sud (Bangladesh...)"
-      },
-      afrique_centrale: {
-        coords: [-4.0, 21.7],
-        label: "Afrique centrale (RD Congo...)"
-      },
-      afrique_nord: {
-        coords: [9.1, 7.4],
-        label: "Afrique du Nord / Ouest"
-      }
-    };
-
-    async function loadDonationsOnMap() {
-      try {
-        const res = await fetch('/donations/map');
-        const data = await res.json();
-
-        // --- Mise à jour des marqueurs sur la carte ---
-        Object.keys(regionConfigs).forEach(key => {
-          const cfg = regionConfigs[key];
-          const totalMeals = data[key] || 0;
-
-          if (totalMeals <= 0) return;
-
-          const marker = L.circleMarker(cfg.coords, {
-            radius: Math.max(4, Math.sqrt(totalMeals)),
-            fillColor: "#ef4444",
-            color: "#dc2626",
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.6
-          }).addTo(map);
-
-          marker.bindPopup(`
-            <strong>${cfg.label}</strong><br>
-            🍽️ ${totalMeals.toLocaleString()} repas financés
-          `);
-        });
-
-        // --- Mise à jour du tableau Repas par région ---
-        const tbody = document.querySelector('#regionsTable tbody');
-        if (tbody) {
-          tbody.innerHTML = '';
-
-          const labelsFr = {
-            afrique_ouest: "Afrique de l'Ouest",
-            afrique_est: "Afrique de l'Est",
-            moyen_orient: "Moyen-Orient",
-            asie_sud: "Asie du Sud",
-            afrique_centrale: "Afrique centrale",
-            afrique_nord: "Afrique du Nord / Ouest"
-          };
-
-          Object.keys(labelsFr).forEach(key => {
-            const total = data[key] || 0;
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td style="padding:6px;">${labelsFr[key]}</td>
-              <td style="padding:6px;">${total.toLocaleString()}</td>
-            `;
-            tbody.appendChild(tr);
-          });
-        }
-      } catch (e) {
-        console.error('Error loading donations map:', e);
-      }
-    }
-
-      <!-- SCRIPTS -->
-  <script src="/static/js/i18n.js"></script>
-  <script src="/static/js/alerts.js"></script>
-  <script src="/static/js/wallet.js"></script>
-
-  <script>
-    // ====== CARTE MONDIALE ======
-    const map = L.map('map').setView([20, 0], 2);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // ====== STATS EN TEMPS RÉEL (/stats) ======
-    async function loadStats() {
-      try {
-        const response = await fetch('/stats');
-        const data = await response.json();
-
-        const footerBlocks = document.getElementById('footerBlocks');
-        const footerTx = document.getElementById('footerTx');
-        if (footerBlocks) footerBlocks.textContent = data.total_blocks ?? 0;
-        if (footerTx) footerTx.textContent = data.total_transactions ?? 0;
-
-        const blocksCount = document.getElementById('blocksCount');
-        const txCount = document.getElementById('txCount');
-        const lastHashHint = document.getElementById('lastHashHint');
-
-        if (blocksCount) blocksCount.textContent = data.total_blocks ?? 0;
-        if (txCount) txCount.textContent = data.total_transactions ?? 0;
-        if (lastHashHint && data.last_block_hash) {
-          lastHashHint.textContent = "Dernier hash: " + data.last_block_hash.slice(0, 12) + "...";
-        }
-      } catch (error) {
-        console.error('Error loading stats:', error);
-      }
-    }
-
-    loadStats();
-    setInterval(loadStats, 10000);
-
-    // ====== PROPOSALS (pour don ciblé) ======
-    async function loadProposals() {
-      try {
-        const res = await fetch('/proposals');
-        const data = await res.json();
-
-        const select = document.getElementById('proposalSelect');
-        if (!select) return;
-
-        select.innerHTML = '<option value="">-- Choisir un projet --</option>';
-
-        data.forEach(p => {
-          const opt = document.createElement('option');
-          opt.value = p.id;
-          opt.textContent = `${p.title} (${p.city}, ${p.country})`;
-          select.appendChild(opt);
-        });
-      } catch (e) {
-        console.error('Error loading proposals:', e);
-      }
-    }
-
-    // Afficher / cacher le select de projets selon le type de don
-    const donTypeEl = document.getElementById('donType');
-    if (donTypeEl) {
-      donTypeEl.addEventListener('change', () => {
-        const g = document.getElementById('proposalSelectGroup');
-        if (!g) return;
-        if (donTypeEl.value === 'proposal') {
-          g.style.display = '';
-          loadProposals();
-        } else {
-          g.style.display = 'none';
-        }
-      });
-    }
-
-    // ====== DON HUMANITAIRE (/donate) ======
-    async function handleHumanitarianDonation() {
-      const donor = document.getElementById('donor').value || 'anonymous';
-      const regionSelect = document.getElementById('region');
-      const donTypeEl = document.getElementById('donType');
-      const proposalSelect = document.getElementById('proposalSelect');
-      const amount = parseFloat(document.getElementById('donationAmount').value || 0);
-      const statusEl = document.getElementById('donationStatus');
-
-      if (amount <= 0) {
-        statusEl.textContent = "Montant invalide.";
-        statusEl.style.color = "#f87171";
-        return;
-      }
-
-      let region = 'auto';
-      let proposal_id = null;
-
-      const donType = donTypeEl ? donTypeEl.value : 'region';
-
-      if (donType === 'region') {
-        region = (regionSelect && regionSelect.value) || 'auto';
-      } else if (donType === 'proposal') {
-        proposal_id = proposalSelect ? proposalSelect.value : null;
-        region = 'auto';
-        if (!proposal_id) {
-          statusEl.textContent = "Choisis un projet.";
-          statusEl.style.color = "#f87171";
-          return;
-        }
-      } else if (donType === 'auto') {
-        region = 'auto';
-        proposal_id = null;
-      }
-
-      statusEl.textContent = "Envoi du don en cours...";
-      statusEl.style.color = "#93c5fd";
-
-      try {
-        const res = await fetch('/donate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ donor, region, proposal_id, amount })
-        });
-        const data = await res.json();
-
-        if (!res.ok) {
-          statusEl.textContent = data.error || "Erreur lors du don.";
-          statusEl.style.color = "#f87171";
-          showAlert('error', data.error || "Erreur lors du don.");
-          return;
-        }
-
-        statusEl.textContent = data.message;
-        statusEl.style.color = "#4ade80";
-        showAlert('success', data.message);
-        loadStats();
-        loadDonationsOnMap();
-      } catch (e) {
-        console.error(e);
-        statusEl.textContent = "Erreur réseau lors du don.";
-        statusEl.style.color = "#f87171";
-        showAlert('error', "Erreur réseau lors du don.");
-      }
-    }
-
-    // ====== STAKING (/stake) ======
-    async function handleStaking() {
-      const amount = parseFloat(document.getElementById('stakeAmount').value || 0);
-      const statusEl = document.getElementById('stakeStatus');
-
-      if (!userAddress) {
-        statusEl.textContent = "Connecte d'abord ton wallet.";
-        statusEl.style.color = "#f97316";
-        showAlert('warning', "Connecte d'abord ton wallet.");
-        return;
-      }
-      if (amount <= 0) {
-        statusEl.textContent = "Montant invalide.";
-        statusEl.style.color = "#f87171";
-        return;
-      }
-
-      statusEl.textContent = "Staking en cours...";
-      statusEl.style.color = "#93c5fd";
-
-      try {
-        const res = await fetch('/stake', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ address: userAddress, amount })
-        });
-        const data = await res.json();
-
-        if (!res.ok) {
-          statusEl.textContent = data.error || "Erreur lors du staking.";
-          statusEl.style.color = "#f87171";
-          showAlert('error', data.error || "Erreur lors du staking.");
-          return;
-        }
-
-        statusEl.textContent =
-          `${data.message} | Total staké : ${data.total_staked} NUTRI | APY ${data.apy}%`;
-        statusEl.style.color = "#4ade80";
-        showAlert('success', data.message);
-        loadStats();
-      } catch (e) {
-        console.error(e);
-        statusEl.textContent = "Erreur réseau lors du staking.";
-        statusEl.style.color = "#f87171";
-        showAlert('error', "Erreur réseau lors du staking.");
-      }
-    }
-
-    // ====== DERNIERS BLOCS (/chain) ======
-    async function loadLatestBlocks() {
-      try {
-        const res = await fetch('/chain');
-        const data = await res.json();
-        const chain = data.chain || [];
-        const tbody = document.querySelector('#blocksTable tbody');
-        if (!tbody) return;
-
-        tbody.innerHTML = '';
-
-        const latest = chain.slice(-5).reverse();
-        latest.forEach(block => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td style="padding:6px;">${block.index}</td>
-            <td style="padding:6px; font-family:monospace;">
-              ${String(block.hash).slice(0, 12)}...
-            </td>
-            <td style="padding:6px;">${(block.transactions || []).length}</td>
-            <td style="padding:6px;">
-              ${new Date(block.timestamp * 1000).toLocaleString()}
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (e) {
-        console.error('Error loading blocks:', e);
-      }
-    }
-
-    loadLatestBlocks();
-    setInterval(loadLatestBlocks, 15000);
-
-    // ====== DONNÉES CARTE LIÉES AUX DONS (/donations/map) ======
-    const regionConfigs = {
-      afrique_ouest: {
-        coords: [14.5, -14.5],
-        label: "Afrique de l'Ouest (Sénégal, Nigeria...)"
-      },
-      afrique_est: {
-        coords: [9.0, 38.7],
-        label: "Afrique de l'Est (Éthiopie...)"
-      },
-      moyen_orient: {
-        coords: [15.3, 44.2],
-        label: "Moyen-Orient (Yémen...)"
-      },
-      asie_sud: {
-        coords: [23.8, 90.4],
-        label: "Asie du Sud (Bangladesh...)"
-      },
-      afrique_centrale: {
-        coords: [-4.0, 21.7],
-        label: "Afrique centrale (RD Congo...)"
-      },
-      afrique_nord: {
-        coords: [9.1, 7.4],
-        label: "Afrique du Nord / Ouest"
-      }
-    };
-
-    async function loadDonationsOnMap() {
-      try {
-        const res = await fetch('/donations/map');
-        const data = await res.json();
-
-        // --- Mise à jour des marqueurs sur la carte ---
-        Object.keys(regionConfigs).forEach(key => {
-          const cfg = regionConfigs[key];
-          const totalMeals = data[key] || 0;
-
-          if (totalMeals <= 0) return;
-
-          const marker = L.circleMarker(cfg.coords, {
-            radius: Math.max(4, Math.sqrt(totalMeals)),
-            fillColor: "#ef4444",
-            color: "#dc2626",
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.6
-          }).addTo(map);
-
-          marker.bindPopup(`
-            <strong>${cfg.label}</strong><br>
-            🍽️ ${totalMeals.toLocaleString()} repas financés
-          `);
-        });
-
-        // --- Mise à jour du tableau Repas par région ---
-        const tbody = document.querySelector('#regionsTable tbody');
-        if (tbody) {
-          tbody.innerHTML = '';
-
-          const labelsFr = {
-            afrique_ouest: "Afrique de l'Ouest",
-            afrique_est: "Afrique de l'Est",
-            moyen_orient: "Moyen-Orient",
-            asie_sud: "Asie du Sud",
-            afrique_centrale: "Afrique centrale",
-            afrique_nord: "Afrique du Nord / Ouest"
-          };
-
-          Object.keys(labelsFr).forEach(key => {
-            const total = data[key] || 0;
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td style="padding:6px;">${labelsFr[key]}</td>
-              <td style="padding:6px;">${total.toLocaleString()}</td>
-            `;
-            tbody.appendChild(tr);
-          });
-        }
-      } catch (e) {
-        console.error('Error loading donations map:', e);
-      }
-    }
-
-    loadDonationsOnMap();
-    setInterval(loadDonationsOnMap, 20000);
-  </script>
+    });
+</script>
 </body>
 </html>
-

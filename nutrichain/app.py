@@ -1,10 +1,14 @@
 from flask import Flask, render_template
+import os
 
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 
-@app.route('/')
+app = Flask(__name__, template_folder=TEMPLATES_DIR)
+
+@app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template("dashboard.html")
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run(debug=True, port=5001)

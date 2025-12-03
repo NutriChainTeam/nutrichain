@@ -61,9 +61,11 @@
 
                     <!-- SECTIONS -->
                     <main class="main-content">
-                        <!-- SECTION STATS -->
+                        <!-- SECTION STATS (MISE À JOUR AVEC GOUVERNANCE) -->
                         <section id="statsSection" class="section">
                             <h2 class="text-xl font-semibold mb-4 text-white">Vue d’ensemble</h2>
+
+                            <!-- STATS D'ORIGINE -->
                             <div class="stats-grid">
                                 <div class="stat-card">
                                     <h3 class="text-slate-400 text-sm">Repas distribués</h3>
@@ -86,6 +88,77 @@
                                     </div>
                                     <p class="text-xs text-slate-500 mt-1">
                                         Conversion indicative NCHAIN → repas
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- BLOCS GOUVERNANCE IMPORTÉS DE NUTRICHAIN3 -->
+                            <div class="stats-grid" style="margin-top: 1.5rem;">
+                                <!-- Votre Adresse -->
+                                <div class="stat-card">
+                                    <h3 class="text-slate-400 text-sm">Votre Adresse</h3>
+                                    <div class="text-sm font-mono text-slate-300 mt-1" id="userAddress">
+                                        Non Connecté
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1">
+                                        Connectez un wallet compatible pour participer à la gouvernance.
+                                    </p>
+                                </div>
+
+                                <!-- Prix NUTRI (USD) -->
+                                <div class="stat-card">
+                                    <h3 class="text-slate-400 text-sm">Prix NUTRI (USD)</h3>
+                                    <div class="text-2xl font-semibold text-white mt-1" id="nutri-price">
+                                        Chargement...
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1" id="nutriCoinSource">
+                                        Valeur indicative du token NUTRI en dollars.
+                                    </p>
+                                </div>
+
+                                <!-- APY simulé -->
+                                <div class="stat-card">
+                                    <h3 class="text-slate-400 text-sm">Taux de Rendement Annuel</h3>
+                                    <div class="text-2xl font-semibold text-emerald-400 mt-1" id="annualYield">
+                                        7.25%
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1">
+                                        APY simulé pour le staking de NUTRI.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="stats-grid" style="margin-top: 1rem;">
+                                <!-- Vos NUTRI votants -->
+                                <div class="stat-card">
+                                    <h3 class="text-slate-400 text-sm">Vos NUTRI votants</h3>
+                                    <div class="text-2xl font-semibold text-white mt-1" id="voting-power">
+                                        0.00
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1" id="userTokens">
+                                        NUTRI pris en compte dans la gouvernance.
+                                    </p>
+                                </div>
+
+                                <!-- Total des propositions soumises -->
+                                <div class="stat-card">
+                                    <h3 class="text-slate-400 text-sm">Total des propositions soumises</h3>
+                                    <div class="text-2xl font-semibold text-orange-400 mt-1" id="totalProposalsCount">
+                                        0
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1">
+                                        Historique global des propositions NutriChain.
+                                    </p>
+                                </div>
+
+                                <!-- Message Firestore -->
+                                <div class="stat-card">
+                                    <h3 class="text-slate-400 text-sm">État de la connexion Firestore</h3>
+                                    <div class="text-sm font-semibold text-red-400 mt-1" id="fallback-error-message">
+                                        ERREUR DE CONNEXION FIRESTORE
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1">
+                                        Le chargement en temps réel a échoué (problème de permissions). Affichage de données statiques.
                                     </p>
                                 </div>
                             </div>

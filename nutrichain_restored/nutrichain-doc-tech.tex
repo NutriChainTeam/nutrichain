@@ -1,0 +1,360 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf-8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xparse}
+
+\geometry{margin=1in}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{NutriChain - Documentation Technique}
+\fancyhead[R]{\today}
+\fancyfoot[C]{\thepage}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  breakatwhitespace=true,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{red},
+  backgroundcolor=\color{lightgray!20},
+  frame=single,
+  language=Python,
+  morekeywords={render_template, jsonify}
+}
+
+\title{\textbf{NutriChain}\\Documentation Technique et Checklist de Démarrage}
+\author{Équipe Technique}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% =====================================================
+\section{Structure du Projet}
+% =====================================================
+
+\subsection{Organisation des fichiers}
+
+\begin{verbatim}
+nutrichain_restored/
+├── api.py                    # Backend Flask (API + routes HTML)
+├── templates/
+│   ├── dashboard.html        # Dashboard principal
+│   ├── index.html            # Page d'accueil (optionnel)
+│   └── ...
+├── static/                   # Fichiers CSS, JS, images
+├── requirements.txt          # Dépendances Python
+├── TECH.md                   # Documentation technique
+├── CHECKLIST_START.md        # Checklist de démarrage
+└── ...
+\end{verbatim}
+
+Flask utilise \texttt{templates/} comme dossier de templates par défaut.
+
+% =====================================================
+\section{Routes Flask Disponibles}
+% =====================================================
+
+Toutes les routes sont définies dans \texttt{api.py}.
+
+\subsection{GET /}
+
+\begin{itemize}
+  \item \textbf{Fonction} : \texttt{index()}
+  \item \textbf{Rôle} : Affiche le dashboard principal
+  \item \textbf{Code} :
+\end{itemize}
+
+\begin{lstlisting}
+@app.route("/")
+def index():
+    return render_template("dashboard.html")
+\end{lstlisting}
+
+\textbf{Problème classique} : Si cette route n'existe pas $\Rightarrow$ 404 sur \texttt{http://127.0.0.1:5000/}.
+
+\subsection{GET /nchain\_balance/<account\_id>}
+
+\begin{itemize}
+  \item \textbf{Fonction} : \texttt{nchain\_balance(account\_id)}
+  \item \textbf{Rôle} : Retourne le solde NCHAIN d'un compte Hedera via Mirror Node (lecture seule)
+  \item \textbf{Réponse JSON} :
+\end{itemize}
+
+\begin{lstlisting}
+{
+  "account_id": "0.0.10128148",
+  "token_id": "0.0.10136204",
+  "symbol": "NCHAIN",
+  "balance": 100000000.0
+}
+\end{lstlisting}
+
+\textbf{En cas d'erreur} (HTTP 502) :
+
+\begin{lstlisting}
+{
+  "error": "Mirror node error",
+  "details": "message d'erreur"
+}
+\end{lstlisting}
+
+% =====================================================
+\section{Intégration Hedera}
+% =====================================================
+
+\subsection{Configuration}
+
+Paramètres dans \texttt{api.py} :
+
+\begin{lstlisting}
+HEDERA_NETWORK = "testnet"  # ou "mainnet"
+NCHAIN_TOKEN_ID = "0.0.10136204"
+MIRROR_BASE = "https://mainnet-public.mirrornode.hedera.com"
+\end{lstlisting}
+
+\subsection{Client Hedera SDK}
+
+\begin{itemize}
+  \item Actuellement \textbf{sans opérateur} (pas de \texttt{setOperator}) pour éviter de stocker la clé privée sur le serveur.
+  \item Toutes les infos NCHAIN du dashboard passent par Mirror Node REST.
+  \item Pas besoin de clé privée pour les opérations de lecture seule.
+\end{itemize}
+
+\subsection{Fonction get\_nchain\_balance}
+
+\begin{lstlisting}
+def get_nchain_balance(account_id: str) -> float:
+    url = f"{MIRROR_BASE}/api/v1/tokens/0.0.10136204/balances"
+    params = {"account.id": account_id}
+    r = requests.get(url, params=params, timeout=10)
+    r.raise_for_status()
+    data = r.json()
+    balances = data.get("balances", [])
+    if not balances:
+        return 0.0
+    raw = balances[0].get("balance", 0)
+    return raw / 1_000_000.0  # si 6 décimales
+\end{lstlisting}
+
+\textbf{Points de vigilance} :
+\begin{itemize}
+  \item \texttt{NCHAIN\_TOKEN\_ID} doit être passé comme \textbf{string} dans l'URL Mirror Node.
+  \item Mauvais token ou mauvais \texttt{MIRROR\_BASE} $\Rightarrow$ 404 ou 5xx.
+\end{itemize}
+
+% =====================================================
+\section{Dashboard (templates/dashboard.html)}
+% =====================================================
+
+\subsection{Grille de statistiques}
+
+\begin{lstlisting}[language=HTML]
+<!-- STATS GRID -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <h3 data-i18n="mealsdistributed">Repas distribués</h3>
+    <div class="value" id="mealsCount">12 847</div>
+    <div class="hint">Basé sur les dons NUTRI</div>
+  </div>
+  
+  <!-- ... autres cartes ... -->
+  
+  <!-- Carte NCHAIN -->
+  <div class="stat-card">
+    <h3>Trésorerie NCHAIN</h3>
+    <div class="value" id="nchain-balance">Chargement...</div>
+    <div class="hint">Solde du compte 0.0.10128148</div>
+  </div>
+</div>
+\end{lstlisting}
+
+\subsection{Script de chargement NCHAIN}
+
+À placer juste avant \texttt{</body>} :
+
+\begin{lstlisting}[language=HTML]
+<script>
+  async function loadNchainBalance() {
+    try {
+      const res = await fetch("/nchain_balance/0.0.10128148");
+      if (!res.ok) {
+        throw new Error("HTTP " + res.status);
+      }
+      const data = await res.json();
+      const el = document.getElementById("nchain-balance");
+      if (!el) return;
+      el.textContent = data.balance.toLocaleString("fr-FR") 
+                       + " " + data.symbol;
+    } catch (e) {
+      const el = document.getElementById("nchain-balance");
+      if (el) {
+        el.textContent = "Erreur chargement solde";
+      }
+      console.error("Error loading NCHAIN balance:", e);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", loadNchainBalance);
+</script>
+</body>
+\end{lstlisting}
+
+Ce script :
+\begin{itemize}
+  \item Fait un \texttt{GET /nchain\_balance/0.0.10128148}
+  \item Lit \texttt{data.balance} et \texttt{data.symbol}
+  \item Affiche dans \texttt{<div id="nchain-balance">}
+\end{itemize}
+
+% =====================================================
+\section{Problèmes Fréquents}
+% =====================================================
+
+\begin{longtable}{|p{3cm}|p{3.5cm}|p{4.5cm}|}
+\hline
+\textbf{Problème} & \textbf{Cause Probable} & \textbf{Solution Rapide} \\
+\hline
+\endhead
+
+404 sur \texttt{http://127.0.0.1:5000/} & Aucune route \texttt{/} définie & Ajouter la route \texttt{@app.route("/")} + \texttt{render\_template("dashboard.html")} \\
+\hline
+
+404 sur \texttt{/nchain\_balance/...} & Route pas définie / faute de frappe & Vérifier la fonction \texttt{nchain\_balance} et l'URL exacte \\
+\hline
+
+Erreur Mirror Node dans JSON & Mauvais token ID, mauvais réseau, objet au lieu de string & Mettre \texttt{token\_id} en string, vérifier \texttt{MIRROR\_BASE} et \texttt{0.0.10136204} \\
+\hline
+
+Carte ``Trésorerie NCHAIN'' reste vide & Script non chargé ou ID différent & Vérifier présence de \texttt{id="nchain-balance"} et du script \texttt{loadNchainBalance()} \\
+\hline
+
+Page dashboard blanche & Mauvaise route ou template manquant & Vérifier \texttt{render\_template("dashboard.html")} et présence du fichier \\
+\hline
+
+\end{longtable}
+
+% =====================================================
+\newpage
+\section{Checklist Technique de Démarrage}
+% =====================================================
+
+\subsection{1. Préparer l'environnement}
+
+\begin{itemize}
+  \item[$\square$] Activer le venv Python du projet, si utilisé (\texttt{source venv/bin/activate})
+  \item[$\square$] Se placer dans le dossier du projet : \texttt{cd \textasciitilde/nutrichain\_restored}
+  \item[$\square$] Vérifier que les dépendances sont installées : \texttt{pip install -r requirements.txt}
+\end{itemize}
+
+\subsection{2. Vérifier la config Hedera / Mirror Node}
+
+\begin{itemize}
+  \item[$\square$] Confirmer le réseau utilisé dans \texttt{api.py} : \texttt{HEDERA\_NETWORK = "testnet"} ou \texttt{"mainnet"}
+  \item[$\square$] Vérifier la base URL Mirror Node selon le réseau (ex. \texttt{https://mainnet-public.mirrornode.hedera.com})
+  \item[$\square$] Vérifier l'ID du token NCHAIN : \texttt{NCHAIN\_TOKEN\_ID = "0.0.10136204"} (en string pour les appels Mirror Node)
+  \item[$\square$] Confirmer que \texttt{get\_nchain\_balance} appelle bien : \texttt{/api/v1/tokens/0.0.10136204/balances?account.id=0.0.10128148}
+\end{itemize}
+
+\subsection{3. Vérifier les routes Flask}
+
+\begin{itemize}
+  \item[$\square$] En haut de \texttt{api.py}, vérifier l'import : \texttt{from flask import Flask, jsonify, request, render\_template}
+  \item[$\square$] Vérifier la route racine (dashboard) : \texttt{@app.route("/")} avec \texttt{render\_template("dashboard.html")}
+  \item[$\square$] Vérifier la route API NCHAIN : \texttt{@app.route("/nchain\_balance/<account\_id>")}
+  \item[$\square$] Vérifier le bloc de lancement : \texttt{if \_\_name\_\_ == "\_\_main\_\_"}: \texttt{app.run(host="0.0.0.0", port=5000, debug=True)}
+\end{itemize}
+
+\subsection{4. Lancer et tester backend}
+
+\begin{itemize}
+  \item[$\square$] Lancer l'API : \texttt{python api.py}
+  \item[$\square$] Confirmer dans les logs : ``Running on http://127.0.0.1:5000''
+  \item[$\square$] Tester l'API NCHAIN directement : \texttt{http://127.0.0.1:5000/nchain\_balance/0.0.10128148}
+  \item[$\square$] Vérifier que la réponse JSON contient \texttt{balance}, \texttt{symbol}, \texttt{token\_id}
+\end{itemize}
+
+\subsection{5. Vérifier le dashboard HTML}
+
+\begin{itemize}
+  \item[$\square$] Confirmer que \texttt{templates/dashboard.html} contient la grille de stats avec la carte NCHAIN
+  \item[$\square$] Confirmer la présence de \texttt{<div class="stat-card">} avec \texttt{id="nchain-balance"}
+  \item[$\square$] En bas de \texttt{dashboard.html}, vérifier le script \texttt{loadNchainBalance()}
+  \item[$\square$] Le script doit être juste avant \texttt{</body>}
+\end{itemize}
+
+\subsection{6. Tester le dashboard en navigateur}
+
+\begin{itemize}
+  \item[$\square$] Ouvrir le dashboard : \texttt{http://127.0.0.1:5000/}
+  \item[$\square$] Vérifier visuellement la carte ``Trésorerie NCHAIN''
+  \item[$\square$] Si vide : ouvrir la console (F12 $\Rightarrow$ Console) et regarder les erreurs
+  \item[$\square$] Vérifier qu'il n'y a pas d'erreur ``Error loading NCHAIN balance''
+\end{itemize}
+
+\subsection{7. En cas de bug}
+
+\begin{itemize}
+  \item[$\square$] Si 404 sur \texttt{/} $\Rightarrow$ vérifier la route \texttt{@app.route("/")}
+  \item[$\square$] Si 404 sur \texttt{/nchain\_balance/...} $\Rightarrow$ vérifier l'URL exacte et la définition de la route
+  \item[$\square$] Si erreur Mirror Node $\Rightarrow$ vérifier \texttt{MIRROR\_BASE}, \texttt{NCHAIN\_TOKEN\_ID} et le réseau
+  \item[$\square$] Si le dashboard ne voit pas les nouvelles modifications HTML $\Rightarrow$ vider le cache navigateur (Ctrl+F5)
+  \item[$\square$] Vérifier qu'on édite bien \texttt{templates/dashboard.html} (pas une copie)
+\end{itemize}
+
+% =====================================================
+\section{Lancement du Projet}
+% =====================================================
+
+\subsection{Commandes essentielles}
+
+\begin{lstlisting}[language=bash]
+# 1. Se placer dans le projet
+cd ~/nutrichain_restored
+
+# 2. Activer le venv (si utilisé)
+source venv/bin/activate
+
+# 3. Installer les dépendances (première fois)
+pip install -r requirements.txt
+
+# 4. Lancer l'API
+python api.py
+
+# 5. Ouvrir le navigateur
+# http://127.0.0.1:5000/              Dashboard
+# http://127.0.0.1:5000/nchain_balance/0.0.10128148    API (test)
+\end{lstlisting}
+
+\subsection{URLs utiles}
+
+\begin{itemize}
+  \item Dashboard : \texttt{http://127.0.0.1:5000/}
+  \item API NCHAIN (test rapide) : \texttt{http://127.0.0.1:5000/nchain\_balance/0.0.10128148}
+\end{itemize}
+
+Mirror Node est uniquement utilisé en lecture seule pour les tokens NCHAIN (solde).
+
+% =====================================================
+\section{Notes}
+% =====================================================
+
+\begin{itemize}
+  \item Hedera est actuellement en mode \textbf{lecture seule}. Pas de clé privée sur le serveur.
+  \item Le compte trésorier \texttt{0.0.10128148} détient 100 000 000 NCHAIN.
+  \item Le token NCHAIN ID est \texttt{0.0.10136204} sur mainnet.
+  \item Consulter \url{https://docs.hedera.com} pour l'API Mirror Node complète.
+\end{itemize}
+
+\end{document}

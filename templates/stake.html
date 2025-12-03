@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>NutriChain - Staking NUTRI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <div class="max-w-xl mx-auto px-4 py-6">
+    <header class="mb-6 flex items-center justify-between">
+      <h1 class="text-xl font-semibold text-white">Staking NUTRI</h1>
+      <a href="/" class="text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1">
+        <i data-lucide="arrow-left" class="w-3 h-3"></i> Retour au dashboard
+      </a>
+    </header>
+
+    <p class="text-xs text-slate-400 mb-4">
+      APY indicatif 7.25 %. Cette page simule le rendement potentiel de votre staking NUTRI.
+    </p>
+
+    <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3 text-xs">
+      <div>
+        <label class="block text-slate-400 mb-1">Montant à staker (NUTRI)</label>
+        <input id="stakeAmount" type="number" min="1" step="1"
+               class="w-full px-2 py-1 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-xs"
+               placeholder="Ex : 1000" />
+      </div>
+      <div>
+        <label class="block text-slate-400 mb-1">Durée (en années)</label>
+        <input id="stakeYears" type="number" min="0.1" step="0.1" value="1"
+               class="w-full px-2 py-1 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-xs"
+               placeholder="Ex : 1" />
+      </div>
+      <button id="simulateStake"
+              class="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white flex items-center gap-1">
+        <i data-lucide="calculator" class="w-3 h-3"></i>
+        Simuler le rendement
+      </button>
+
+      <div id="stakeResult" class="text-[11px] text-slate-400 mt-1"></div>
+    </div>
+  </div>
+
+  <script>
+    const APY = 0.0725;
+
+    function setupStakeSimulation() {
+      const btn = document.getElementById('simulateStake');
+      const amountEl = document.getElementById('stakeAmount');
+      const yearsEl = document.getElementById('stakeYears');
+      const resultEl = document.getElementById('stakeResult');
+
+      if (!btn) return;
+
+      btn.addEventListener('click', () => {
+        const amount = Number(amountEl.value);
+        const years = Number(yearsEl.value);
+        if (!amount || amount <= 0 || !years || years <= 0) {
+          resultEl.textContent = "Veuillez saisir un montant et une durée valides.";
+          resultEl.className = "text-[11px] text-red-400 mt-1";
+          return;
+        }
+
+        const final = amount * Math.pow(1 + APY, years);
+        const gain = final - amount;
+
+        resultEl.textContent =
+          `Après ${years.toFixed(2)} ans à 7.25% APY, ` +
+          `vos ${amount.toLocaleString('fr-FR')} NUTRI deviendraient environ ` +
+          `${final.toLocaleString('fr-FR')} NUTRI (soit +${gain.toLocaleString('fr-FR')} NUTRI).`;
+        resultEl.className = "text-[11px] text-emerald-400 mt-1";
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setupStakeSimulation();
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

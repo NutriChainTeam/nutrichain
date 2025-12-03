@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>NutriChain Gouvernance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { background-color: #0f172a; color: #e5e7eb; }
+    .card { background-color: #020617; border: 1px solid #1f2937; border-radius: 0.75rem; }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+  <header class="mb-8 flex flex-col md:flex-row justify-between items-center border-b border-slate-800 pb-4">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-white">NutriChain DAO</h1>
+      <p class="text-xs text-slate-400 mt-1">Propositions et impact des dons par région</p>
+    </div>
+    <a href="/" class="mt-3 md:mt-0 text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1">
+      <i data-lucide="arrow-left" class="w-3 h-3"></i> Retour au dashboard
+    </a>
+  </header>
+
+  <main class="space-y-6 max-w-5xl mx-auto">
+    <section class="card p-4">
+      <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+        <i data-lucide="scale" class="w-5 h-5 text-sky-400"></i>
+        Propositions en cours
+      </h2>
+      <p class="text-xs text-slate-400 mb-3">
+        Données simplifiées depuis l’API Flask /proposals.
+      </p>
+      <div id="proposalsContainer" class="space-y-3 text-sm">
+        <p id="proposalsLoading" class="text-slate-500 text-xs">Chargement des propositions...</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    async function loadProposals() {
+      const container = document.getElementById('proposalsContainer');
+      const loading = document.getElementById('proposalsLoading');
+      if (!container) return;
+
+      try {
+        const res = await fetch('/proposals');
+        const data = await res.json();
+        if (loading) loading.remove();
+
+        if (!res.ok || !data.proposals || data.proposals.length === 0) {
+          container.innerHTML = '<p class="text-xs text-slate-500">Aucune proposition disponible.</p>';
+          return;
+        }
+
+        container.innerHTML = '';
+        data.proposals.forEach((p) => {
+          const div = document.createElement('div');
+          div.className = 'card p-3 border border-slate-700';
+          div.innerHTML = `
+            <div class="flex justify-between items-center mb-1">
+              <h3 class="font-semibold text-slate-100 text-sm">${p.title}</h3>
+              <span class="text-[11px] px-2 py-0.5 rounded-full ${
+                p.status === 'open' ? 'bg-emerald-600/20 text-emerald-300' : 'bg-slate-700 text-slate-300'
+              }">
+                ${p.status || 'inconnu'}
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400 mb-1">
+              Région : <span class="text-slate-200">${p.region}</span>
+            </p>
+            <p class="text-[11px] text-slate-400">
+              Objectif repas : <span class="text-slate-200">${p.meals_target}</span> •
+              Financé : <span class="text-emerald-300">${p.meals_funded}</span>
+            </p>
+          `;
+          container.appendChild(div);
+        });
+      } catch (e) {
+        console.error('Erreur chargement propositions', e);
+        if (loading) loading.textContent = 'Erreur lors du chargement des propositions.';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProposals();
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    });
+  </script>
+</body>
+</html>
