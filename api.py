@@ -2,6 +2,8 @@ import os
 import requests
 from flask import Flask, jsonify, request, render_template
 
+# ================= HEDERA SDK =================
+
 hedera_available = True
 try:
     from hedera import (
@@ -20,15 +22,17 @@ app = Flask(__name__)
 # ========== CONFIG HEDERA ==========
 HEDERA_NETWORK = "testnet"  # testnet pour dev
 
-# ID du token NCHAIN sur le réseau choisi (à adapter si besoin)
-NCHAIN_TOKEN_ID = TokenId.fromString("0.0.10136204")
+if hedera_available:
+    # ID du token NCHAIN sur le réseau choisi (à adapter si besoin)
+    NCHAIN_TOKEN_ID = TokenId.fromString("0.0.10136204")
 
-
-if HEDERA_NETWORK == "testnet":
-    hedera_client = Client.forTestnet()
+    if HEDERA_NETWORK == "testnet":
+        hedera_client = Client.forTestnet()
+    else:
+        hedera_client = Client.forMainnet()
 else:
-    hedera_client = Client.forMainnet()
-
+    NCHAIN_TOKEN_ID = None
+    hedera_client = None
 # ===================================
 
 # ========== DONATIONS MAP ==========
@@ -56,12 +60,10 @@ proposals = [
 ]
 # ==========================================
 
-
 # --- Envoi on-chain des NCHAIN ---
-
 def send_nchain(to_account: str, amount_tokens: float) -> str:
-    if not hedera_available:
-        # Sur Render on simule un succès car pas de JDK
+    if not hedera_available or NCHAIN_TOKEN_ID is None or hedera_client is None:
+        # Sur Render (sans SDK/Java), on simule un succès
         return "SIMULATED_ON_RENDER"
 
     tokens_smallest = int(amount_tokens * 1_000_000)  # 6 décimales
@@ -78,22 +80,22 @@ def send_nchain(to_account: str, amount_tokens: float) -> str:
     tx_response = tx.execute(hedera_client)
     receipt = tx_response.getReceipt(hedera_client)
     return str(receipt.status)
-
-
 # ---------------------------------
+
 
 @app.route("/donate_page")
 def donate_page():
     return render_template("donate.html")
 
+
 @app.route("/stake")
 def stake_page():
     return render_template("stake.html")
 
+
 @app.route("/governance")
 def governance_page():
     return render_template("governance.html")
-
 
 
 @app.route("/health", methods=["GET"])
@@ -105,25 +107,21 @@ def health():
 def list_proposals():
     return jsonify({"proposals": proposals}), 200
 
+
 @app.route("/donate", methods=["GET"])
 def show_donate_page():
     return render_template("donate.html")
 
+
 @app.route("/donate", methods=["POST"])
 def donate():
-    # (ton code existant pour le don on-chain)
     data = request.get_json(force=True)
+
     wallet_address = data.get("wallet_address")
     donor_label = data.get("donor_label", "Anonyme")
     region = data.get("region")
     amount = data.get("amount")
     hedera_account = data.get("hedera_account")
-
-    # ... (le reste du code)
-
-    # ... (le reste de ton code de don)
-
-    # ... (le reste de ton code de don)
 
     if not wallet_address:
         return jsonify({"error": "wallet_address manquant"}), 400
@@ -156,7 +154,6 @@ def donate():
         target_proposal["meals_funded"] = funded + meals
 
     # Envoi on-chain des NCHAIN
-
     try:
         tx_status = send_nchain(hedera_account, amount)
     except Exception as e:
@@ -176,7 +173,7 @@ def donate():
             "donations_by_region": donations_by_region,
             "proposal": target_proposal,
             "hedera_account": hedera_account,
-            "nchain_token_id": str(NCHAIN_TOKEN_ID),
+            "nchain_token_id": str(NCHAIN_TOKEN_ID) if NCHAIN_TOKEN_ID else None,
             "nchain_tx_status": str(tx_status),
         }
     ), 201
@@ -218,6 +215,7 @@ def nchain_balance(account_id):
             "balance": balance,
         }
     )
+
 
 @app.route("/")
 def index():
