@@ -82,6 +82,29 @@ def send_nchain(to_account: str, amount_tokens: float) -> str:
     return str(receipt.status)
 # ---------------------------------
 
+@app.route("/link_wallet", methods=["POST"])
+def link_wallet():
+    """
+    Lie un wallet (Hedera ou EVM) au profil NutriChain.
+    Pour l'instant, on se contente de renvoyer ce qui est reçu.
+    """
+    data = request.get_json(force=True) or {}
+
+    account = data.get("account")          # ex: 0.0.123456 (Hedera)
+    evm_address = data.get("evm_address")  # ex: 0xABC... (EVM sur Hedera)
+
+    if not account and not evm_address:
+        return jsonify({"error": "Aucun identifiant de wallet fourni"}), 400
+
+    # Ici plus tard : sauvegarde en base / Firestore, etc.
+    # Pour l'instant on renvoie juste ce qui est reçu.
+    return jsonify(
+        {
+            "message": "Wallet lié à NutriChain (simulation)",
+            "account": account,
+            "evm_address": evm_address,
+        }
+    ), 200
 
 @app.route("/donate_page")
 def donate_page():
