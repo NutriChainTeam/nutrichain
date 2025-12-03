@@ -154,6 +154,12 @@
                                 <i data-lucide="plug-zap" class="w-4 h-4"></i>
                                 Connecter un wallet Hedera
                             </button>
+                            <button
+                              id="wcConnectBtn"
+                              class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                <i data-lucide="wallet" class="w-4 h-4"></i>
+                                Connect Wallet (WalletConnect)
+                            </button>
                         </div>
 
                         <!-- STATS PRINCIPALES -->
@@ -468,10 +474,20 @@
         });
     }
 
+    function setupWalletConnectPlaceholder() {
+        const btn = document.getElementById('wcConnectBtn');
+        if (!btn) return;
+
+        btn.addEventListener('click', () => {
+            alert("Plus tard : ouverture du sélecteur WalletConnect multi-wallet (MetaMask, HashPack, Blade, etc.).");
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         loadNchainBalance();
         initMap();
         setupWalletPrompt();
+        setupWalletConnectPlaceholder();
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
