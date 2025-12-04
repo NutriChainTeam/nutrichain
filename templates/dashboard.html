@@ -88,6 +88,10 @@
             border: 1px solid #1f2937;
             overflow: hidden;
         }
+        #mapFullscreen {
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100">
@@ -352,7 +356,29 @@
                         <p class="text-sm text-slate-400 mb-3">
                             Localisation de quelques projets alimentaires soutenus par les dons NCHAIN.
                         </p>
-                        <div id="map"></div>
+
+                        <div class="relative">
+                            <div id="map" class="cursor-pointer"></div>
+
+                            <button
+                              id="mapFullscreenBtn"
+                              class="absolute top-2 right-2 z-20 px-2 py-1 rounded bg-black/60 text-xs text-white">
+                                Plein écran
+                            </button>
+                        </div>
+
+                        <div
+                          id="mapOverlay"
+                          class="fixed inset-0 z-40 bg-black/90 hidden">
+                            <div class="absolute top-2 right-2">
+                                <button
+                                  id="mapOverlayClose"
+                                  class="px-3 py-1 rounded bg-slate-800 text-xs text-white">
+                                    Fermer
+                                </button>
+                            </div>
+                            <div id="mapFullscreen" class="w-full h-full mt-8"></div>
+                        </div>
                     </section>
                 </main>
             </div>
@@ -399,6 +425,7 @@
 
 <script>
     let map;
+    let fullscreenMap;
 
     async function loadNchainBalance(defaultAccount = "0.0.10128148") {
         try {
@@ -420,26 +447,26 @@
         }
     }
 
+    const locations = [
+        {lat: 48.8566, lng: 2.3522, name: 'Paris, France', meals: 127, org: 'Restos du Cœur'},
+        {lat: 33.5138, lng: 36.2765, name: 'Damas, Syrie', meals: 50, org: 'Cantine Al-Amal'},
+        {lat: 9.0320, lng: 38.7469, name: 'Addis-Abeba, Éthiopie', meals: 89, org: 'Programme WFP'},
+        {lat: 28.6139, lng: 77.2090, name: 'New Delhi, Inde', meals: 234, org: 'Akshaya Patra'},
+        {lat: -23.5505, lng: -46.6333, name: 'São Paulo, Brésil', meals: 156, org: 'Banco de Alimentos'},
+        {lat: 36.8065, lng: 10.1815, name: 'Tunis, Tunisie', meals: 78, org: 'Croissant Rouge'},
+        {lat: 31.7917, lng: 35.2167, name: 'Jérusalem', meals: 42, org: 'Leket Israel'},
+        {lat: -4.0435, lng: 39.6682, name: 'Mombasa, Kenya', meals: 91, org: 'Food4Education'},
+        {lat: 23.8103, lng: 90.4125, name: 'Dhaka, Bangladesh', meals: 203, org: 'BRAC'},
+        {lat: 13.0827, lng: 80.2707, name: 'Chennai, Inde', meals: 167, org: 'Amma Canteen'},
+        {lat: 6.5244, lng: 3.3792, name: 'Lagos, Nigeria', meals: 112, org: 'Food Bank Nigeria'},
+        {lat: 33.8869, lng: 35.5131, name: 'Beyrouth, Liban', meals: 65, org: 'Secours Islamique'}
+    ];
+
     function initMap() {
         map = L.map('map').setView([20, 0], 2);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
-
-        const locations = [
-            {lat: 48.8566, lng: 2.3522, name: 'Paris, France', meals: 127, org: 'Restos du Cœur'},
-            {lat: 33.5138, lng: 36.2765, name: 'Damas, Syrie', meals: 50, org: 'Cantine Al-Amal'},
-            {lat: 9.0320, lng: 38.7469, name: 'Addis-Abeba, Éthiopie', meals: 89, org: 'Programme WFP'},
-            {lat: 28.6139, lng: 77.2090, name: 'New Delhi, Inde', meals: 234, org: 'Akshaya Patra'},
-            {lat: -23.5505, lng: -46.6333, name: 'São Paulo, Brésil', meals: 156, org: 'Banco de Alimentos'},
-            {lat: 36.8065, lng: 10.1815, name: 'Tunis, Tunisie', meals: 78, org: 'Croissant Rouge'},
-            {lat: 31.7917, lng: 35.2167, name: 'Jérusalem', meals: 42, org: 'Leket Israel'},
-            {lat: -4.0435, lng: 39.6682, name: 'Mombasa, Kenya', meals: 91, org: 'Food4Education'},
-            {lat: 23.8103, lng: 90.4125, name: 'Dhaka, Bangladesh', meals: 203, org: 'BRAC'},
-            {lat: 13.0827, lng: 80.2707, name: 'Chennai, Inde', meals: 167, org: 'Amma Canteen'},
-            {lat: 6.5244, lng: 3.3792, name: 'Lagos, Nigeria', meals: 112, org: 'Food Bank Nigeria'},
-            {lat: 33.8869, lng: 35.5131, name: 'Beyrouth, Liban', meals: 65, org: 'Secours Islamique'}
-        ];
 
         locations.forEach(loc => {
             const marker = L.marker([loc.lat, loc.lng]).addTo(map);
@@ -450,6 +477,44 @@
                     <small>${loc.org}</small>
                 </div>
             `);
+        });
+    }
+
+    function setupMapFullscreen() {
+        const btn = document.getElementById('mapFullscreenBtn');
+        const overlay = document.getElementById('mapOverlay');
+        const closeBtn = document.getElementById('mapOverlayClose');
+
+        if (!btn || !overlay || !closeBtn) return;
+
+        btn.addEventListener('click', () => {
+            overlay.classList.remove('hidden');
+
+            if (!fullscreenMap) {
+                fullscreenMap = L.map('mapFullscreen').setView([20, 0], 2);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(fullscreenMap);
+
+                locations.forEach(loc => {
+                    const marker = L.marker([loc.lat, loc.lng]).addTo(fullscreenMap);
+                    marker.bindPopup(`
+                        <div style="color: #e5e7eb;">
+                            <strong>${loc.name}</strong><br>
+                            <span style="color: #10b981;">🍽️ ${loc.meals} repas distribués</span><br>
+                            <small>${loc.org}</small>
+                        </div>
+                    `);
+                });
+            }
+
+            setTimeout(() => {
+                fullscreenMap.invalidateSize();
+            }, 200);
+        });
+
+        closeBtn.addEventListener('click', () => {
+            overlay.classList.add('hidden');
         });
     }
 
@@ -488,6 +553,7 @@
         initMap();
         setupWalletPrompt();
         setupWalletConnectPlaceholder();
+        setupMapFullscreen();
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
