@@ -2,6 +2,7 @@ import os
 import requests
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
+import requests
 
 # ================= HEDERA SDK =================
 
@@ -20,8 +21,115 @@ except Exception as e:
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": "*"}})
+MIRROR_BASE = "https://mainnet-public.mirrornode.hedera.com"
+NCHAIN_TOKEN_ID = "0.0.10136204"  # si tu veux, tu peux le factoriser ici
 
+proposals_db = []
+votes_db = []
+
+def get_nchain_balance(account_id: str) -> float:
+    url = f"{MIRROR_BASE}/api/v1/tokens/{NCHAIN_TOKEN_ID}/balances"
+    params = {"account.id": account_id}
+    r = requests.get(url, params=params, timeout=10)
+    r.raise_for_status()
+    data = r.json()
+    balances = data.get("balances", [])
+    if not balances:
+        return 0.0
+
+    raw = balances[0].get("balance", 0)
+    # NCHAIN a 6 décimales
+    return raw / 1_000_000.0
+
+
+@app.route("/proposals", methods=["GET", "POST"])
+def proposals():
+    if request.method == "GET":
+        return jsonify({"proposals": proposals_db})
+
+    data = request.get_json() or {}
+    title = data.get("title")
+    region = data.get("region") or "N/A"
+    meals_target = data.get("meals_target") or 0
+
+    if not title:
+        return jsonify({"message": "Titre obligatoire"}), 400
+
+    new_id = (proposals_db[-1]["id"] + 1) if proposals_db else 1
+    proposal = {
+        "id": new_id,
+        "title": title,
+        "region": region,
+        "meals_target": meals_target,
+        "meals_funded": 0,
+        "status": "open",
+    }
+    proposals_db.append(proposal)
+    return jsonify({"message": "Proposition créée.", "proposal": proposal}), 201
+
+
+@app.route("/vote/<int:proposal_id>", methods=["POST"])
+def vote(proposal_id):
+    data = request.get_json() or {}
+    choice = data.get("choice")
+    wallet = data.get("wallet")  # peut être None pour l’instant
+
+    if choice not in ("yes", "no", "abstain"):
+        return jsonify({"message": "Choix invalide."}), 400
+
+    # Temporaire : si pas de wallet, on prend un poids fixe 1.0
+    if not wallet:
+        weight = 1.0
+    else:
+        try:
+            weight = get_nchain_balance(wallet)
+        except Exception:
+            weight = 0.0
+
+    vote_record = {
+        "proposal_id": proposal_id,
+        "wallet": wallet,
+        "choice": choice,
+        "weight": weight,
+    }
+    votes_db.append(vote_record)
+
+    return jsonify({"message": f"Vote '{choice}' enregistré.", "weight": weight}), 200
+
+@app.route("/proposals/<int:proposal_id>/results", methods=["GET"])
+def proposal_results(proposal_id):
+    yes_weight = 0.0
+    no_weight = 0.0
+    abstain_weight = 0.0
+
+    for v in votes_db:
+        if v["proposal_id"] != proposal_id:
+            continue
+        if v["choice"] == "yes":
+            yes_weight += v["weight"]
+        elif v["choice"] == "no":
+            no_weight += v["weight"]
+        elif v["choice"] == "abstain":
+            abstain_weight += v["weight"]
+
+    return jsonify({
+        "proposal_id": proposal_id,
+        "results": {
+            "yes": yes_weight,
+            "no": no_weight,
+            "abstain": abstain_weight,
+        },
+    })
+
+@app.route("/api/donate", methods=["POST"])
+def api_donate():
+    data = request.get_json()
+    # Plus tard : sauvegarde en base ou fichier
+    app.logger.info(f"New donation: {data}")
+    return jsonify({"status": "ok"}), 200
+
+# registre simple en mémoire : { "0.0.x": "0x..." }
+linked_wallets = {}
 
 # ========== CONFIG HEDERA ==========
 HEDERA_NETWORK = "testnet"  # testnet pour dev
@@ -185,24 +293,6 @@ def donate():
 MIRROR_BASE = "https://mainnet-public.mirrornode.hedera.com"
 
 
-def get_nchain_balance(account_id: str) -> float:
-    """
-    Retourne le solde NCHAIN (en unités lisibles) pour un compte Hedera donné.
-    """
-    url = f"{MIRROR_BASE}/api/v1/tokens/0.0.10136204/balances"
-    params = {"account.id": account_id}
-    r = requests.get(url, params=params, timeout=10)
-    r.raise_for_status()
-    data = r.json()
-    balances = data.get("balances", [])
-    if not balances:
-        return 0.0
-
-    raw = balances[0].get("balance", 0)
-    # NCHAIN a 6 décimales
-    return raw / 1_000_000.0
-
-
 @app.route("/nchain_balance/<account_id>")
 def nchain_balance(account_id):
     try:
@@ -219,13 +309,21 @@ def nchain_balance(account_id):
         }
     )
 
+
+@app.route("/nchain_balance/aid", methods=["GET"])
+def nchain_balance_aid():
+    return nchain_balance("0.0.10168905")
+
+
+
 # ... imports, config Hedera, send_nchain, etc.
+
 
 @app.route("/link_wallet", methods=["POST"])
 def link_wallet():
     """
     Lie un wallet (Hedera ou EVM) au profil NutriChain.
-    Pour l'instant, on se contente de renvoyer ce qui est reçu.
+    Stockage en mémoire dans linked_wallets pour le dashboard.
     """
     data = request.get_json(force=True) or {}
 
@@ -235,12 +333,30 @@ def link_wallet():
     if not account and not evm_address:
         return jsonify({"error": "Aucun identifiant de wallet fourni"}), 400
 
-    # Ici plus tard : sauvegarde en base / Firestore, etc.
-    # Pour l'instant on renvoie juste ce qui est reçu.
+    if account:
+        linked_wallets[account] = evm_address
+
     return jsonify(
         {
-            "message": "Wallet lié à NutriChain (simulation)",
+            "message": "Wallet lié à NutriChain",
             "account": account,
+            "evm_address": evm_address,
+        }
+    ), 200
+
+
+@app.route("/linked_wallet/<account_id>", methods=["GET"])
+def linked_wallet(account_id):
+    """
+    Renvoie l'adresse EVM liée à un compte Hedera donné, si disponible.
+    """
+    evm_address = linked_wallets.get(account_id)
+    if not evm_address:
+        return jsonify({"error": "Aucun wallet lié pour cet account"}), 404
+
+    return jsonify(
+        {
+            "account": account_id,
             "evm_address": evm_address,
         }
     ), 200
@@ -248,7 +364,8 @@ def link_wallet():
 
 @app.route("/")
 def index():
-    return render_template("dashboard.html")
+    treasury_id = "0.0.10128148"  # compte trésorier NCHAIN
+    return render_template("dashboard.html", treasury_id=treasury_id)
 
 
 if __name__ == "__main__":

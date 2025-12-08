@@ -140,29 +140,42 @@
                     <section id="statsSection" class="section">
                         <h2 class="text-xl font-semibold mb-4 text-white">Vue d’ensemble</h2>
 
+
                         <!-- Boutons d’action -->
                         <div class="flex flex-wrap gap-3 mb-4">
                             <a href="/donate"
-                               class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white flex items-center gap-2">
+                               class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white">
                                 <i data-lucide="donate" class="w-4 h-4"></i>
                                 Faire un don
                             </a>
+
                             <a href="/stake"
-                               class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white flex items-center gap-2">
+                               class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white">
                                 <i data-lucide="layers" class="w-4 h-4"></i>
                                 Staker des NUTRI
                             </a>
+
                             <button
                               id="connectWalletBtn"
-                              class="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-sm font-semibold text-gray-900 flex items-center gap-2">
+                              class="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-sm font-semibold text-gray-900 flex">
                                 <i data-lucide="plug-zap" class="w-4 h-4"></i>
                                 Connecter un wallet Hedera
                             </button>
+
                             <button
                               id="wcConnectBtn"
-                              class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-sm font-semibold text-gray-900 flex items-center gap-2">
+                              class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-sm font-semibold text-gray-900 flex">
                                 <i data-lucide="wallet" class="w-4 h-4"></i>
                                 Connect Wallet (WalletConnect)
+                            </button>
+
+                            <button
+                              id="openNutriWalletBtn"
+                              class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-sm font-semibold text-gray-900 flex"
+                              onclick="window.open('http://localhost:3000', '_blank')"
+                            >
+                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                                Ouvrir le wallet NutriChain
                             </button>
                         </div>
 
@@ -350,6 +363,7 @@
                         </ul>
                     </section>
 
+
                     <!-- SECTION MAP -->
                     <section id="mapSection" class="section mt-10">
                         <h2 class="text-xl font-semibold mb-4 text-white">Carte des dons & cantines</h2>
@@ -445,9 +459,7 @@
             if (el) el.textContent = 'Erreur de chargement';
             console.error('Error loading NCHAIN balance', e);
         }
-    }
-
-    const locations = [
+        const locations = [
         {lat: 48.8566, lng: 2.3522, name: 'Paris, France', meals: 127, org: 'Restos du Cœur'},
         {lat: 33.5138, lng: 36.2765, name: 'Damas, Syrie', meals: 50, org: 'Cantine Al-Amal'},
         {lat: 9.0320, lng: 38.7469, name: 'Addis-Abeba, Éthiopie', meals: 89, org: 'Programme WFP'},
@@ -558,6 +570,122 @@
             lucide.createIcons();
         }
     });
+
+ // appel de test avec un accountId connu
+    loadLinkedWallet("0.0.7314686");
+  });
+
+  async function loadLinkedWallet(accountId) {
+    const span = document.getElementById("linkedWalletSpan");
+    if (!span) return;
+
+    const res = await fetch(`/linked_wallet/${accountId}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      span.textContent = "Aucun wallet lié";
+      return;
+    }
+
+    span.textContent = `${data.account} → ${data.evm_address}`;
+  }
 </script>
+
+<p class="text-sm text-slate-400">
+  Wallet lié :
+  <span id="linkedWalletSpan">inconnu</span>
+</p>
+  <script>
+    // ID du compte trésorier injecté par Flask
+    const treasuryId = "{{ treasury_id }}";
+
+    // Récupérer le solde NCHAIN du trésor
+    fetch(`/nchain_balance/${treasuryId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Erreur nchain_balance: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Balance NCHAIN trésor:", data);
+        // document.getElementById("treasury-balance").textContent = data.balance ?? "—";
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+
+    // Récupérer un wallet lié (si défini) pour ce compte
+    fetch(`/linked_wallet/${treasuryId}`)
+      .then((response) => {
+        if (response.status === 404) {
+          console.log("Aucun wallet lié pour ce compte");
+          return null;
+        }
+        if (!response.ok) {
+          throw new Error(`Erreur linked_wallet: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((info) => {
+        if (!info) return;
+        console.log("Wallet lié:", info);
+        // document.getElementById("linked-wallet-address").textContent = info.evm_address;
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  </script>
+
+  <!-- Leaflet CSS + JS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const map = L.map("map").setView([14.6928, -17.4467], 5); // Dakar / Afrique Ouest
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(map);
+
+      L.marker([14.6928, -17.4467])
+        .addTo(map)
+        .bindPopup("Projet NutriChain - Dakar");
+
+      const overlay = document.getElementById("mapOverlay");
+      const btnFullscreen = document.getElementById("mapFullscreenBtn");
+      const btnClose = document.getElementById("mapOverlayClose");
+      const fullscreenDiv = document.getElementById("mapFullscreen");
+      let fullMap = null;
+
+      btnFullscreen.addEventListener("click", () => {
+        overlay.classList.remove("hidden");
+        fullscreenDiv.innerHTML = "";
+        fullMap = L.map("mapFullscreen").setView(map.getCenter(), map.getZoom());
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: "&copy; OpenStreetMap contributors",
+        }).addTo(fullMap);
+        L.marker([14.6928, -17.4467])
+          .addTo(fullMap)
+          .bindPopup("Projet NutriChain - Dakar");
+      });
+
+      btnClose.addEventListener("click", () => {
+        overlay.classList.add("hidden");
+        if (fullMap) {
+          fullMap.remove();
+          fullMap = null;
+        }
+        fullscreenDiv.innerHTML = "";
+      });
+    });
+  </script>
 </body>
 </html>
+

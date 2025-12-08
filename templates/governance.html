@@ -23,6 +23,54 @@
   </header>
 
   <main class="space-y-6 max-w-5xl mx-auto">
+    <!-- FORMULAIRE DE CRÉATION -->
+    <section class="card p-4 mb-4">
+      <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+        <i data-lucide="file-plus" class="w-5 h-5 text-emerald-400"></i>
+        Créer une nouvelle proposition
+      </h2>
+      <form id="newProposalForm" class="space-y-2 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">Titre</label>
+          <input
+            type="text"
+            name="title"
+            class="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 text-xs"
+            required
+          />
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Région</label>
+          <input
+            type="text"
+            name="region"
+            class="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 text-xs"
+            placeholder="Afrique Ouest, Moyen-Orient..."
+          />
+        </div>
+        <div class="flex gap-2">
+          <div class="flex-1">
+            <label class="block text-slate-400 mb-1">Objectif repas</label>
+            <input
+              type="number"
+              name="meals_target"
+              class="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 text-xs"
+              min="1"
+              required
+            />
+          </div>
+        </div>
+        <p id="newProposalStatus" class="text-[11px] text-slate-400"></p>
+        <button
+          type="submit"
+          class="mt-2 px-3 py-1 text-[11px] rounded bg-emerald-600 hover:bg-emerald-500 text-white"
+        >
+          Publier la proposition
+        </button>
+      </form>
+    </section>
+
+    <!-- LISTE DES PROPOSITIONS -->
     <section class="card p-4">
       <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
         <i data-lucide="scale" class="w-5 h-5 text-sky-400"></i>
@@ -38,6 +86,55 @@
   </main>
 
   <script>
+    async function sendVote(proposalId, choice, statusEl) {
+      try {
+        statusEl.textContent = "Envoi du vote...";
+        const res = await fetch(`/vote/${proposalId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ choice }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || "Erreur lors du vote");
+        }
+        statusEl.textContent = data.message || "Vote enregistré.";
+      } catch (e) {
+        console.error("Erreur vote", e);
+        statusEl.textContent =
+          "Impossible d’enregistrer le vote. Réessaie.";
+      }
+    }
+
+    async function createProposal(form, statusEl) {
+      const formData = new FormData(form);
+      const payload = {
+        title: formData.get("title"),
+        region: formData.get("region"),
+        meals_target: Number(formData.get("meals_target")),
+      };
+
+      try {
+        statusEl.textContent = "Envoi de la proposition...";
+        const res = await fetch("/proposals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || "Erreur lors de la création");
+        }
+        statusEl.textContent = data.message || "Proposition créée.";
+        form.reset();
+        await loadProposals();
+      } catch (e) {
+        console.error("Erreur création proposition", e);
+        statusEl.textContent =
+          "Impossible de créer la proposition. Réessaie.";
+      }
+    }
+
     async function loadProposals() {
       const container = document.getElementById('proposalsContainer');
       const loading = document.getElementById('proposalsLoading');
@@ -69,12 +166,64 @@
             <p class="text-[11px] text-slate-400 mb-1">
               Région : <span class="text-slate-200">${p.region}</span>
             </p>
-            <p class="text-[11px] text-slate-400">
+            <p class="text-[11px] text-slate-400 mb-2">
               Objectif repas : <span class="text-slate-200">${p.meals_target}</span> •
               Financé : <span class="text-emerald-300">${p.meals_funded}</span>
             </p>
+
+            ${
+              p.status === 'open'
+                ? `
+                  <div class="flex gap-2 mt-1">
+                    <button
+                      class="vote-yes px-3 py-1 text-[11px] rounded bg-emerald-600 hover:bg-emerald-500 text-white"
+                      data-id="${p.id}"
+                    >
+                      Oui
+                    </button>
+                    <button
+                      class="vote-no px-3 py-1 text-[11px] rounded bg-rose-600 hover:bg-rose-500 text-white"
+                      data-id="${p.id}"
+                    >
+                      Non
+                    </button>
+                    <button
+                      class="vote-abstain px-3 py-1 text-[11px] rounded bg-slate-600 hover:bg-slate-500 text-white"
+                      data-id="${p.id}"
+                    >
+                      Neutre
+                    </button>
+                  </div>
+                  <p class="vote-status text-[11px] text-slate-400 mt-1"></p>
+                `
+                : `<p class="text-[11px] text-slate-500 mt-1">Vote fermé.</p>`
+            }
           `;
           container.appendChild(div);
+        });
+
+        container.querySelectorAll('.vote-yes').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const statusEl = btn.closest('.card').querySelector('.vote-status');
+            sendVote(id, 'yes', statusEl);
+          });
+        });
+
+        container.querySelectorAll('.vote-no').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const statusEl = btn.closest('.card').querySelector('.vote-status');
+            sendVote(id, 'no', statusEl);
+          });
+        });
+
+        container.querySelectorAll('.vote-abstain').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const statusEl = btn.closest('.card').querySelector('.vote-status');
+            sendVote(id, 'abstain', statusEl);
+          });
         });
       } catch (e) {
         console.error('Erreur chargement propositions', e);
@@ -86,6 +235,15 @@
       loadProposals();
       if (typeof lucide !== 'undefined') {
         lucide.createIcons();
+      }
+
+      const form = document.getElementById("newProposalForm");
+      const statusEl = document.getElementById("newProposalStatus");
+      if (form && statusEl) {
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          createProposal(form, statusEl);
+        });
       }
     });
   </script>
