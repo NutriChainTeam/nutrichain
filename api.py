@@ -1,3 +1,4 @@
+
 import os
 import requests
 from flask import Flask, jsonify, request, render_template
@@ -17,15 +18,16 @@ try:
     )
 except Exception as e:
     hedera_available = False
-    print("Hedera SDK non disponible sur ce runtime:", e)
+    print("Hedera SDK not available on this runtime:", e)
 
 app = Flask(__name__)
 
 MIRROR_BASE = "https://mainnet-public.mirrornode.hedera.com"
-NCHAIN_TOKEN_ID = "0.0.10136204"  # si tu veux, tu peux le factoriser ici
+NCHAIN_TOKEN_ID = "0.0.10136204"  # factorized here
 
 proposals_db = []
 votes_db = []
+
 
 def get_nchain_balance(account_id: str) -> float:
     url = f"{MIRROR_BASE}/api/v1/tokens/{NCHAIN_TOKEN_ID}/balances"
@@ -38,7 +40,7 @@ def get_nchain_balance(account_id: str) -> float:
         return 0.0
 
     raw = balances[0].get("balance", 0)
-    # NCHAIN a 6 décimales
+    # NCHAIN has 6 decimals
     return raw / 1_000_000.0
 
 
@@ -53,7 +55,7 @@ def proposals():
     meals_target = data.get("meals_target") or 0
 
     if not title:
-        return jsonify({"message": "Titre obligatoire"}), 400
+        return jsonify({"message": "Title is required"}), 400
 
     new_id = (proposals_db[-1]["id"] + 1) if proposals_db else 1
     proposal = {
@@ -65,19 +67,19 @@ def proposals():
         "status": "open",
     }
     proposals_db.append(proposal)
-    return jsonify({"message": "Proposition créée.", "proposal": proposal}), 201
+    return jsonify({"message": "Proposal created.", "proposal": proposal}), 201
 
 
 @app.route("/vote/<int:proposal_id>", methods=["POST"])
 def vote(proposal_id):
     data = request.get_json() or {}
     choice = data.get("choice")
-    wallet = data.get("wallet")  # peut être None pour l’instant
+    wallet = data.get("wallet")  # can be None for now
 
     if choice not in ("yes", "no", "abstain"):
-        return jsonify({"message": "Choix invalide."}), 400
+        return jsonify({"message": "Invalid choice."}), 400
 
-    # Temporaire : si pas de wallet, on prend un poids fixe 1.0
+    # Temporary: if no wallet, use fixed weight 1.0
     if not wallet:
         weight = 1.0
     else:
@@ -94,7 +96,8 @@ def vote(proposal_id):
     }
     votes_db.append(vote_record)
 
-    return jsonify({"message": f"Vote '{choice}' enregistré.", "weight": weight}), 200
+    return jsonify({"message": f"Vote '{choice}' recorded.", "weight": weight}), 200
+
 
 @app.route("/proposals/<int:proposal_id>/results", methods=["GET"])
 def proposal_results(proposal_id):
@@ -112,30 +115,34 @@ def proposal_results(proposal_id):
         elif v["choice"] == "abstain":
             abstain_weight += v["weight"]
 
-    return jsonify({
-        "proposal_id": proposal_id,
-        "results": {
-            "yes": yes_weight,
-            "no": no_weight,
-            "abstain": abstain_weight,
-        },
-    })
+    return jsonify(
+        {
+            "proposal_id": proposal_id,
+            "results": {
+                "yes": yes_weight,
+                "no": no_weight,
+                "abstain": abstain_weight,
+            },
+        }
+    )
+
 
 @app.route("/api/donate", methods=["POST"])
 def api_donate():
     data = request.get_json()
-    # Plus tard : sauvegarde en base ou fichier
+    # Later: persist to DB or file
     app.logger.info(f"New donation: {data}")
     return jsonify({"status": "ok"}), 200
 
-# registre simple en mémoire : { "0.0.x": "0x..." }
+
+# simple in‑memory registry: { "0.0.x": "0x..." }
 linked_wallets = {}
 
-# ========== CONFIG HEDERA ==========
-HEDERA_NETWORK = "testnet"  # testnet pour dev
+# ========== HEDERA CONFIG ==========
+HEDERA_NETWORK = "testnet"  # testnet for dev
 
 if hedera_available:
-    # ID du token NCHAIN sur le réseau choisi (à adapter si besoin)
+    # NCHAIN token ID on the chosen network
     NCHAIN_TOKEN_ID = TokenId.fromString("0.0.10136204")
 
     if HEDERA_NETWORK == "testnet":
@@ -155,7 +162,7 @@ donations_by_region = {
     "asie_sud": 0,
     "afrique_centrale": 0,
     "afrique_nord": 0,
-    "Dakar": 0,  # pour accepter Dakar
+    "Dakar": 0,  # accept Dakar
 }
 # ===================================
 
@@ -172,13 +179,14 @@ proposals = [
 ]
 # ==========================================
 
-# --- Envoi on-chain des NCHAIN ---
+
+# --- On‑chain NCHAIN transfer ---
 def send_nchain(to_account: str, amount_tokens: float) -> str:
     if not hedera_available or NCHAIN_TOKEN_ID is None or hedera_client is None:
-        # Sur Render (sans SDK/Java), on simule un succès
+        # On Render (no SDK/Java), simulate success
         return "SIMULATED_ON_RENDER"
 
-    tokens_smallest = int(amount_tokens * 1_000_000)  # 6 décimales
+    tokens_smallest = int(amount_tokens * 1_000_000)  # 6 decimals
     tx = TransferTransaction(
         token_transfers={
             str(NCHAIN_TOKEN_ID): {
@@ -193,6 +201,10 @@ def send_nchain(to_account: str, amount_tokens: float) -> str:
     receipt = tx_response.getReceipt(hedera_client)
     return str(receipt.status)
 # ---------------------------------
+@app.route("/about-governance")
+def about_governance():
+    return render_template("about_governance.html")
+
 
 @app.route("/donate_page")
 def donate_page():
@@ -229,32 +241,32 @@ def donate():
     data = request.get_json(force=True)
 
     wallet_address = data.get("wallet_address")
-    donor_label = data.get("donor_label", "Anonyme")
+    donor_label = data.get("donor_label", "Anonymous")
     region = data.get("region")
     amount = data.get("amount")
     hedera_account = data.get("hedera_account")
 
     if not wallet_address:
-        return jsonify({"error": "wallet_address manquant"}), 400
+        return jsonify({"error": "wallet_address missing"}), 400
 
     if region not in donations_by_region:
-        return jsonify({"error": "Région inconnue"}), 400
+        return jsonify({"error": "Unknown region"}), 400
 
     if not isinstance(amount, (int, float)) or amount <= 0:
-        return jsonify({"error": "Montant invalide"}), 400
+        return jsonify({"error": "Invalid amount"}), 400
 
     if not hedera_account:
         return jsonify(
-            {"error": "Compte Hedera manquant (hedera_account)"}
+            {"error": "Missing Hedera account (hedera_account)"}
         ), 400
 
-    # 1 NUTRI = 1 repas (exemple)
+    # 1 NUTRI = 1 meal (example)
     meals = int(amount)
 
-    # Mise à jour des stats régionales
+    # Update regional stats
     donations_by_region[region] += amount
 
-    # Ciblage d'une proposition sur cette région
+    # Target a proposal for this region
     target_proposal = next(
         (p for p in proposals if p["region"] == region), None
     )
@@ -264,17 +276,17 @@ def donate():
         funded = target_proposal.get("meals_funded", 0)
         target_proposal["meals_funded"] = funded + meals
 
-    # Envoi on-chain des NCHAIN
+    # On‑chain NCHAIN transfer
     try:
         tx_status = send_nchain(hedera_account, amount)
     except Exception as e:
         return jsonify(
-            {"error": "Échec du transfert NCHAIN", "details": str(e)}
+            {"error": "NCHAIN transfer failed", "details": str(e)}
         ), 502
 
     return jsonify(
         {
-            "message": f"Don de {amount} NUTRI reçu pour la région {region}",
+            "message": f"Donation of {amount} NUTRI received for region {region}",
             "wallet_address": wallet_address,
             "donor_label": donor_label,
             "region": region,
@@ -315,30 +327,26 @@ def nchain_balance_aid():
     return nchain_balance("0.0.10168905")
 
 
-
-# ... imports, config Hedera, send_nchain, etc.
-
-
 @app.route("/link_wallet", methods=["POST"])
 def link_wallet():
     """
-    Lie un wallet (Hedera ou EVM) au profil NutriChain.
-    Stockage en mémoire dans linked_wallets pour le dashboard.
+    Link a wallet (Hedera or EVM) to the NutriChain profile.
+    In‑memory storage in linked_wallets for the dashboard.
     """
     data = request.get_json(force=True) or {}
 
-    account = data.get("account")          # ex: 0.0.123456 (Hedera)
-    evm_address = data.get("evm_address")  # ex: 0xABC... (EVM sur Hedera)
+    account = data.get("account")          # e.g.: 0.0.123456 (Hedera)
+    evm_address = data.get("evm_address")  # e.g.: 0xABC... (EVM on Hedera)
 
     if not account and not evm_address:
-        return jsonify({"error": "Aucun identifiant de wallet fourni"}), 400
+        return jsonify({"error": "No wallet identifier provided"}), 400
 
     if account:
         linked_wallets[account] = evm_address
 
     return jsonify(
         {
-            "message": "Wallet lié à NutriChain",
+            "message": "Wallet linked to NutriChain",
             "account": account,
             "evm_address": evm_address,
         }
@@ -348,11 +356,11 @@ def link_wallet():
 @app.route("/linked_wallet/<account_id>", methods=["GET"])
 def linked_wallet(account_id):
     """
-    Renvoie l'adresse EVM liée à un compte Hedera donné, si disponible.
+    Returns the EVM address linked to a given Hedera account, if available.
     """
     evm_address = linked_wallets.get(account_id)
     if not evm_address:
-        return jsonify({"error": "Aucun wallet lié pour cet account"}), 404
+        return jsonify({"error": "No wallet linked for this account"}), 404
 
     return jsonify(
         {
@@ -364,9 +372,10 @@ def linked_wallet(account_id):
 
 @app.route("/")
 def index():
-    treasury_id = "0.0.10128148"  # compte trésorier NCHAIN
+    treasury_id = "0.0.10128148"  # NCHAIN treasury account
     return render_template("dashboard.html", treasury_id=treasury_id)
 
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+
