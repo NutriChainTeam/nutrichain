@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>NutriChain Dashboard</title>
@@ -106,14 +105,14 @@
                 <div>
                     <h1 class="text-lg font-semibold tracking-tight text-white">NutriChain Dashboard</h1>
                     <p class="text-xs text-slate-400">
-                        Suivi de la trésorerie NCHAIN, des blocs et de l’impact repas distribués
+                        Tracking NCHAIN treasury, blocks, and distributed meals impact.
                     </p>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- CONTENU PRINCIPAL -->
+    <!-- MAIN CONTENT -->
     <div class="flex-1 bg-slate-950">
         <div class="max-w-6xl mx-auto px-4 py-6">
             <div class="dashboard-layout">
@@ -123,43 +122,42 @@
                         Navigation
                     </h2>
 
-                    <a href="#statsSection" class="nav-item active">Statistiques</a>
-                    <a href="#chainSection" class="nav-item">Chaîne / trésorerie</a>
-                    <a href="#mapSection" class="nav-item">Carte des dons</a>
+                    <a href="#statsSection" class="nav-item active">Statistics</a>
+                    <a href="#chainSection" class="nav-item">Chain / Treasury</a>
+                    <a href="#mapSection" class="nav-item">Donations map</a>
 
                     <hr class="my-3 border-slate-800">
 
-                    <a href="/donate" class="nav-item">Faire un don</a>
-                    <a href="/stake" class="nav-item">Staker NUTRI</a>
-                    <a href="/governance" class="nav-item">Gouvernance DAO</a>
+                    <a href="/donate" class="nav-item">Make a donation</a>
+                    <a href="/stake" class="nav-item">Stake NUTRI</a>
+                    <a href="/governance" class="nav-item">DAO governance</a>
                 </aside>
 
                 <!-- MAIN -->
                 <main class="main-content">
-                    <!-- SECTION STATS -->
+                    <!-- STATS SECTION -->
                     <section id="statsSection" class="section">
-                        <h2 class="text-xl font-semibold mb-4 text-white">Vue d’ensemble</h2>
+                        <h2 class="text-xl font-semibold mb-4 text-white">Overview</h2>
 
-
-                        <!-- Boutons d’action -->
+                        <!-- ACTION BUTTONS -->
                         <div class="flex flex-wrap gap-3 mb-4">
                             <a href="/donate"
                                class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white">
                                 <i data-lucide="donate" class="w-4 h-4"></i>
-                                Faire un don
+                                Make a donation
                             </a>
 
                             <a href="/stake"
                                class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white">
                                 <i data-lucide="layers" class="w-4 h-4"></i>
-                                Staker des NUTRI
+                                Stake NUTRI
                             </a>
 
                             <button
                               id="connectWalletBtn"
                               class="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-sm font-semibold text-gray-900 flex">
                                 <i data-lucide="plug-zap" class="w-4 h-4"></i>
-                                Connecter un wallet Hedera
+                                Connect a Hedera wallet
                             </button>
 
                             <button
@@ -175,109 +173,109 @@
                               onclick="window.open('http://localhost:3000', '_blank')"
                             >
                                 <i data-lucide="external-link" class="w-4 h-4"></i>
-                                Ouvrir le wallet NutriChain
+                                Open NutriChain wallet
                             </button>
                         </div>
 
-                        <!-- STATS PRINCIPALES -->
+                        <!-- MAIN STATS -->
                         <div class="stats-grid">
                             <div class="stat-card">
-                                <h3 class="text-slate-400 text-sm">Repas distribués</h3>
-                                <div class="text-2xl font-semibold text-white mt-1" id="mealsCount">12 847</div>
+                                <h3 class="text-slate-400 text-sm">Meals distributed</h3>
+                                <div class="text-2xl font-semibold text-white mt-1" id="mealsCount">12,847</div>
                                 <p class="text-xs text-slate-500 mt-1">
-                                    Basé sur les dons NCHAIN déclarés
+                                    Based on reported NCHAIN donations.
                                 </p>
                             </div>
                             <div class="stat-card">
-                                <h3 class="text-slate-400 text-sm">Trésorerie NCHAIN</h3>
-                                <div class="text-2xl font-semibold text-emerald-400 mt-1" id="nchain-balance">Chargement...</div>
+                                <h3 class="text-slate-400 text-sm">NCHAIN treasury</h3>
+                                <div class="text-2xl font-semibold text-emerald-400 mt-1" id="nchain-balance">Loading...</div>
                                 <p class="text-xs text-slate-500 mt-1">
-                                    Solde du compte 0.0.10128148
+                                    Balance of account 0.0.10128148
                                 </p>
                             </div>
                             <div class="stat-card">
-                                <h3 class="text-slate-400 text-sm">Impact estimé</h3>
+                                <h3 class="text-slate-400 text-sm">Estimated impact</h3>
                                 <div class="text-2xl font-semibold text-orange-400 mt-1">
-                                    <span id="impactMeals">–</span> repas
+                                    <span id="impactMeals">–</span> meals
                                 </div>
                                 <p class="text-xs text-slate-500 mt-1">
-                                    Conversion indicative NCHAIN → repas
+                                    Indicative conversion NCHAIN → meals.
                                 </p>
                             </div>
                         </div>
 
-                        <!-- RÉSUMÉ GOUVERNANCE -->
+                        <!-- GOVERNANCE SUMMARY -->
                         <div class="stats-grid" style="margin-top: 1.5rem;">
                             <div class="stat-card">
-                                <h3 class="text-slate-400 text-sm">Votre Adresse</h3>
+                                <h3 class="text-slate-400 text-sm">Your address</h3>
                                 <div class="text-sm font-mono text-slate-300 mt-1" id="userAddress">
-                                    Non Connecté
+                                    Not connected
                                 </div>
                                 <p class="text-xs text-slate-500 mt-1">
-                                    Connectez un wallet compatible pour participer à la gouvernance.
+                                    Connect a compatible wallet to participate in governance.
                                 </p>
                             </div>
 
                             <div class="stat-card">
-                                <h3 class="text-slate-400 text-sm">Prix NUTRI (USD)</h3>
+                                <h3 class="text-slate-400 text-sm">NUTRI price (USD)</h3>
                                 <div class="text-2xl font-semibold text-white mt-1" id="nutri-price">
-                                    NA
+                                    N/A
                                 </div>
                                 <p class="text-xs text-slate-500 mt-1" id="nutriCoinSource">
-                                    Valeur indicative du token NUTRI.
+                                    Indicative value of the NUTRI token.
                                 </p>
                             </div>
 
                             <div class="stat-card">
-                                <h3 class="text-slate-400 text-sm">Taux de Rendement Annuel</h3>
+                                <h3 class="text-slate-400 text-sm">Annual yield</h3>
                                 <div class="text-2xl font-semibold text-emerald-400 mt-1" id="annualYield">
                                     7.25%
                                 </div>
                                 <p class="text-xs text-slate-500 mt-1">
-                                    APY simulé pour le staking de NUTRI.
+                                    Simulated APY for staking NUTRI.
                                 </p>
                             </div>
                         </div>
 
                         <div class="stats-grid" style="margin-top: 1rem;">
                             <div class="stat-card">
-                                <h3 class="text-slate-400 text-sm">Vos NUTRI votants</h3>
+                                <h3 class="text-slate-400 text-sm">Your voting NUTRI</h3>
                                 <div class="text-2xl font-semibold text-white mt-1" id="voting-power">
                                     0.00
                                 </div>
                                 <p class="text-xs text-slate-500 mt-1" id="userTokens">
-                                    NUTRI pris en compte dans la gouvernance.
+                                    NUTRI counted for governance.
                                 </p>
                             </div>
 
                             <div class="stat-card">
-                                <h3 class="text-slate-400 text-sm">Total des propositions soumises</h3>
+                                <h3 class="text-slate-400 text-sm">Total proposals submitted</h3>
                                 <div class="text-2xl font-semibold text-orange-400 mt-1" id="totalProposalsCount">
                                     0
                                 </div>
                                 <p class="text-xs text-slate-500 mt-1">
-                                    Historique global des propositions NutriChain.
+                                    Global history of NutriChain proposals.
                                 </p>
                             </div>
 
                             <div class="stat-card">
-                                <h3 class="text-slate-400 text-sm">État de la connexion Firestore</h3>
+                                <h3 class="text-slate-400 text-sm">Firestore connection status</h3>
                                 <div class="text-sm font-semibold text-red-400 mt-1" id="fallback-error-message">
-                                    Mode statique (simulation DAO)
+                                    Static mode (DAO simulation)
                                 </div>
                                 <p class="text-xs text-slate-500 mt-1">
-                                    Le chargement en temps réel peut être désactivé en dev.
+                                    Real-time loading may be disabled in dev.
                                 </p>
                             </div>
                         </div>
 
-                        <!-- BLOCS RÉCENTS & TOTAUX PAR RÉGION -->
+                        <!-- RECENT BLOCKS & REGIONAL TOTALS -->
                         <div class="stats-grid" style="margin-top: 1.5rem;">
-                            <!-- Blocs récents -->
+                            <!-- Recent blocks -->
                             <div class="stat-card col-span-1 md:col-span-2">
-                                <h3 class="text-slate-400 text-sm mb-2">Blocs récents NutriChain</h3>
+                                <h3 class="text-slate-400 text-sm mb-2">Recent NutriChain blocks</h3>
                                 <p class="text-xs text-slate-500 mb-2">
-                                    Aperçu des derniers blocs minés sur NutriChain.
+                                    Overview of the latest blocks on NutriChain.
                                 </p>
                                 <div class="overflow-x-auto">
                                     <table class="min-w-full text-xs text-slate-300 border border-slate-800 rounded-lg">
@@ -313,62 +311,61 @@
                                 </div>
                             </div>
 
-                            <!-- Totaux par région -->
+                            <!-- Totals by region -->
                             <div class="stat-card">
-                                <h3 class="text-slate-400 text-sm mb-2">Totaux par région</h3>
+                                <h3 class="text-slate-400 text-sm mb-2">Totals by region</h3>
                                 <p class="text-xs text-slate-500 mb-2">
-                                    Totaux agrégés à partir des dons enregistrés sur NutriChain.
+                                    Aggregated totals from donations recorded on NutriChain.
                                 </p>
                                 <div class="overflow-x-auto">
                                     <table class="min-w-full text-xs text-slate-300 border border-slate-800 rounded-lg">
                                         <thead class="bg-slate-900 text-slate-400">
                                         <tr>
-                                            <th class="px-2 py-1 text-left">Région</th>
-                                            <th class="px-2 py-1 text-right">Repas financés (NUTRI)</th>
+                                            <th class="px-2 py-1 text-left">Region</th>
+                                            <th class="px-2 py-1 text-right">Meals funded (NUTRI)</th>
                                         </tr>
                                         </thead>
                                         <tbody id="regionsTableBody">
                                         <tr>
-                                            <td class="px-2 py-1 border-t border-slate-800">Afrique Ouest</td>
+                                            <td class="px-2 py-1 border-t border-slate-800">West Africa</td>
                                             <td class="px-2 py-1 border-t border-slate-800 text-right">0</td>
                                         </tr>
                                         <tr>
-                                            <td class="px-2 py-1 border-t border-slate-800">Afrique Est</td>
+                                            <td class="px-2 py-1 border-t border-slate-800">East Africa</td>
                                             <td class="px-2 py-1 border-t border-slate-800 text-right">0</td>
                                         </tr>
                                         <tr>
-                                            <td class="px-2 py-1 border-t border-slate-800">Moyen-Orient</td>
+                                            <td class="px-2 py-1 border-t border-slate-800">Middle East</td>
                                             <td class="px-2 py-1 border-t border-slate-800 text-right">0</td>
                                         </tr>
                                         </tbody>
                                     </table>
                                 </div>
                                 <p class="text-[11px] text-slate-500 mt-2">
-                                    Chaque token = 1 repas distribué.
+                                    Each token = 1 meal distributed.
                                 </p>
                             </div>
                         </div>
                     </section>
 
-                    <!-- SECTION CHAIN -->
+                    <!-- CHAIN SECTION -->
                     <section id="chainSection" class="section mt-10">
-                        <h2 class="text-xl font-semibold mb-4 text-white">Chaîne NCHAIN / blockchain</h2>
+                        <h2 class="text-xl font-semibold mb-4 text-white">NCHAIN chain / blockchain</h2>
                         <p class="text-sm text-slate-400 mb-3">
-                            Détails sur le token NCHAIN, le compte trésorier et la lecture via Mirror Node.
+                            Details about the NCHAIN token, treasury account, and read‑only access via Mirror Node.
                         </p>
                         <ul class="list-disc list-inside text-sm text-slate-300 space-y-1">
-                            <li>ID du token NCHAIN : 0.0.10136204</li>
-                            <li>Compte trésorier suivi : 0.0.10128148</li>
-                            <li>Lecture des soldes via Mirror Node (lecture seule)</li>
+                            <li>NCHAIN token ID: 0.0.10136204</li>
+                            <li>Tracked treasury account: 0.0.10128148</li>
+                            <li>Balances read via Mirror Node (read‑only)</li>
                         </ul>
                     </section>
 
-
-                    <!-- SECTION MAP -->
+                    <!-- MAP SECTION -->
                     <section id="mapSection" class="section mt-10">
-                        <h2 class="text-xl font-semibold mb-4 text-white">Carte des dons & cantines</h2>
+                        <h2 class="text-xl font-semibold mb-4 text-white">Donations & canteens map</h2>
                         <p class="text-sm text-slate-400 mb-3">
-                            Localisation de quelques projets alimentaires soutenus par les dons NCHAIN.
+                            Location of some food projects supported by NCHAIN donations.
                         </p>
 
                         <div class="relative">
@@ -377,7 +374,7 @@
                             <button
                               id="mapFullscreenBtn"
                               class="absolute top-2 right-2 z-20 px-2 py-1 rounded bg-black/60 text-xs text-white">
-                                Plein écran
+                                Fullscreen
                             </button>
                         </div>
 
@@ -388,7 +385,7 @@
                                 <button
                                   id="mapOverlayClose"
                                   class="px-3 py-1 rounded bg-slate-800 text-xs text-white">
-                                    Fermer
+                                    Close
                                 </button>
                             </div>
                             <div id="mapFullscreen" class="w-full h-full mt-8"></div>
@@ -401,18 +398,18 @@
             <footer class="mt-12 pt-8 border-t border-[#30363d] text-center text-sm text-gray-400">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                        <h4 class="text-white font-semibold mb-3">À propos</h4>
+                        <h4 class="text-white font-semibold mb-3">About</h4>
                         <p class="text-gray-400">
-                            NutriChain relie la transparence des tokens NCHAIN à l’impact réel en repas,
-                            avec une gouvernance décentralisée et vérifiable.
+                            NutriChain links NCHAIN token transparency to real meals impact,
+                            with decentralized and verifiable governance.
                         </p>
                     </div>
                     <div>
-                        <h4 class="text-white font-semibold mb-3">Ressources</h4>
+                        <h4 class="text-white font-semibold mb-3">Resources</h4>
                         <ul class="text-gray-400 space-y-1">
-                            <li>Documentation technique</li>
-                            <li>Explorateur Hedera</li>
-                            <li>Interface de gouvernance</li>
+                            <li>Technical documentation</li>
+                            <li>Hedera explorer</li>
+                            <li>Governance interface</li>
                         </ul>
                     </div>
                     <div>
@@ -448,30 +445,32 @@
             const data = await res.json();
             const el = document.getElementById('nchain-balance');
             if (el) {
-                el.textContent = `${data.balance.toLocaleString('fr-FR')} ${data.symbol}`;
+                el.textContent = `${data.balance.toLocaleString('en-US')} ${data.symbol}`;
             }
             const impactEl = document.getElementById('impactMeals');
             if (impactEl) {
-                impactEl.textContent = data.balance.toLocaleString('fr-FR');
+                impactEl.textContent = data.balance.toLocaleString('en-US');
             }
         } catch (e) {
             const el = document.getElementById('nchain-balance');
-            if (el) el.textContent = 'Erreur de chargement';
+            if (el) el.textContent = 'Loading error';
             console.error('Error loading NCHAIN balance', e);
         }
-        const locations = [
+    }
+
+    const locations = [
         {lat: 48.8566, lng: 2.3522, name: 'Paris, France', meals: 127, org: 'Restos du Cœur'},
-        {lat: 33.5138, lng: 36.2765, name: 'Damas, Syrie', meals: 50, org: 'Cantine Al-Amal'},
-        {lat: 9.0320, lng: 38.7469, name: 'Addis-Abeba, Éthiopie', meals: 89, org: 'Programme WFP'},
-        {lat: 28.6139, lng: 77.2090, name: 'New Delhi, Inde', meals: 234, org: 'Akshaya Patra'},
-        {lat: -23.5505, lng: -46.6333, name: 'São Paulo, Brésil', meals: 156, org: 'Banco de Alimentos'},
-        {lat: 36.8065, lng: 10.1815, name: 'Tunis, Tunisie', meals: 78, org: 'Croissant Rouge'},
-        {lat: 31.7917, lng: 35.2167, name: 'Jérusalem', meals: 42, org: 'Leket Israel'},
+        {lat: 33.5138, lng: 36.2765, name: 'Damascus, Syria', meals: 50, org: 'Cantine Al-Amal'},
+        {lat: 9.0320, lng: 38.7469, name: 'Addis Ababa, Ethiopia', meals: 89, org: 'WFP programme'},
+        {lat: 28.6139, lng: 77.2090, name: 'New Delhi, India', meals: 234, org: 'Akshaya Patra'},
+        {lat: -23.5505, lng: -46.6333, name: 'São Paulo, Brazil', meals: 156, org: 'Banco de Alimentos'},
+        {lat: 36.8065, lng: 10.1815, name: 'Tunis, Tunisia', meals: 78, org: 'Red Crescent'},
+        {lat: 31.7917, lng: 35.2167, name: 'Jerusalem', meals: 42, org: 'Leket Israel'},
         {lat: -4.0435, lng: 39.6682, name: 'Mombasa, Kenya', meals: 91, org: 'Food4Education'},
         {lat: 23.8103, lng: 90.4125, name: 'Dhaka, Bangladesh', meals: 203, org: 'BRAC'},
-        {lat: 13.0827, lng: 80.2707, name: 'Chennai, Inde', meals: 167, org: 'Amma Canteen'},
+        {lat: 13.0827, lng: 80.2707, name: 'Chennai, India', meals: 167, org: 'Amma Canteen'},
         {lat: 6.5244, lng: 3.3792, name: 'Lagos, Nigeria', meals: 112, org: 'Food Bank Nigeria'},
-        {lat: 33.8869, lng: 35.5131, name: 'Beyrouth, Liban', meals: 65, org: 'Secours Islamique'}
+        {lat: 33.8869, lng: 35.5131, name: 'Beirut, Lebanon', meals: 65, org: 'Islamic Relief'}
     ];
 
     function initMap() {
@@ -485,7 +484,7 @@
             marker.bindPopup(`
                 <div style="color: #e5e7eb;">
                     <strong>${loc.name}</strong><br>
-                    <span style="color: #10b981;">🍽️ ${loc.meals} repas distribués</span><br>
+                    <span style="color: #10b981;">🍽️ ${loc.meals} meals distributed</span><br>
                     <small>${loc.org}</small>
                 </div>
             `);
@@ -513,7 +512,7 @@
                     marker.bindPopup(`
                         <div style="color: #e5e7eb;">
                             <strong>${loc.name}</strong><br>
-                            <span style="color: #10b981;">🍽️ ${loc.meals} repas distribués</span><br>
+                            <span style="color: #10b981;">🍽️ ${loc.meals} meals distributed</span><br>
                             <small>${loc.org}</small>
                         </div>
                     `);
@@ -537,8 +536,8 @@
         btn.addEventListener('click', async () => {
             const current = document.getElementById('userAddress')?.textContent || '';
             const accountId = prompt(
-                "Entrez votre compte Hedera (ex: 0.0.123456)",
-                current && current !== "Non Connecté" ? current : ""
+                "Enter your Hedera account (e.g. 0.0.123456)",
+                current && current !== "Not connected" ? current : ""
             );
             if (!accountId) return;
 
@@ -556,8 +555,23 @@
         if (!btn) return;
 
         btn.addEventListener('click', () => {
-            alert("Plus tard : ouverture du sélecteur WalletConnect multi-wallet (MetaMask, HashPack, Blade, etc.).");
+            alert("Later: open the WalletConnect multi-wallet selector (MetaMask, HashPack, Blade, etc.).");
         });
+    }
+
+    async function loadLinkedWallet(accountId) {
+        const span = document.getElementById("linkedWalletSpan");
+        if (!span) return;
+
+        const res = await fetch(`/linked_wallet/${accountId}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+            span.textContent = "No wallet linked";
+            return;
+        }
+
+        span.textContent = `${data.account} → ${data.evm_address}`;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -569,123 +583,107 @@
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
+
+        // test call with a known accountId
+        loadLinkedWallet("0.0.7314686");
     });
-
- // appel de test avec un accountId connu
-    loadLinkedWallet("0.0.7314686");
-  });
-
-  async function loadLinkedWallet(accountId) {
-    const span = document.getElementById("linkedWalletSpan");
-    if (!span) return;
-
-    const res = await fetch(`/linked_wallet/${accountId}`);
-    const data = await res.json();
-
-    if (!res.ok) {
-      span.textContent = "Aucun wallet lié";
-      return;
-    }
-
-    span.textContent = `${data.account} → ${data.evm_address}`;
-  }
 </script>
 
 <p class="text-sm text-slate-400">
-  Wallet lié :
-  <span id="linkedWalletSpan">inconnu</span>
+  Linked wallet:
+  <span id="linkedWalletSpan">unknown</span>
 </p>
-  <script>
-    // ID du compte trésorier injecté par Flask
+
+<script>
+    // Treasury account ID injected by Flask
     const treasuryId = "{{ treasury_id }}";
 
-    // Récupérer le solde NCHAIN du trésor
+    // Get NCHAIN balance of the treasury
     fetch(`/nchain_balance/${treasuryId}`)
       .then((response) => {
         if (!response.ok) {
-          throw new Error(`Erreur nchain_balance: ${response.status}`);
+          throw new Error(`nchain_balance error: ${response.status}`);
         }
         return response.json();
       })
       .then((data) => {
-        console.log("Balance NCHAIN trésor:", data);
+        console.log("Treasury NCHAIN balance:", data);
         // document.getElementById("treasury-balance").textContent = data.balance ?? "—";
       })
       .catch((err) => {
         console.error(err);
       });
 
-    // Récupérer un wallet lié (si défini) pour ce compte
+    // Get a linked wallet (if any) for this account
     fetch(`/linked_wallet/${treasuryId}`)
       .then((response) => {
         if (response.status === 404) {
-          console.log("Aucun wallet lié pour ce compte");
+          console.log("No wallet linked for this account");
           return null;
         }
         if (!response.ok) {
-          throw new Error(`Erreur linked_wallet: ${response.status}`);
+          throw new Error(`linked_wallet error: ${response.status}`);
         }
         return response.json();
       })
       .then((info) => {
         if (!info) return;
-        console.log("Wallet lié:", info);
+        console.log("Linked wallet:", info);
         // document.getElementById("linked-wallet-address").textContent = info.evm_address;
       })
       .catch((err) => {
         console.error(err);
       });
-  </script>
+</script>
 
-  <!-- Leaflet CSS + JS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Second Leaflet block (kept minimal, reusing same texts) -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const map = L.map("map").setView([14.6928, -17.4467], 5); // Dakar / Afrique Ouest
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const map2 = L.map("map").setView([14.6928, -17.4467], 5); // Dakar / West Africa
 
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map2);
+
+    L.marker([14.6928, -17.4467])
+      .addTo(map2)
+      .bindPopup("NutriChain project - Dakar");
+
+    const overlay = document.getElementById("mapOverlay");
+    const btnFullscreen = document.getElementById("mapFullscreenBtn");
+    const btnClose = document.getElementById("mapOverlayClose");
+    const fullscreenDiv = document.getElementById("mapFullscreen");
+    let fullMap = null;
+
+    btnFullscreen.addEventListener("click", () => {
+      overlay.classList.remove("hidden");
+      fullscreenDiv.innerHTML = "";
+      fullMap = L.map("mapFullscreen").setView(map2.getCenter(), map2.getZoom());
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution: "&copy; OpenStreetMap contributors",
-      }).addTo(map);
-
+      }).addTo(fullMap);
       L.marker([14.6928, -17.4467])
-        .addTo(map)
-        .bindPopup("Projet NutriChain - Dakar");
-
-      const overlay = document.getElementById("mapOverlay");
-      const btnFullscreen = document.getElementById("mapFullscreenBtn");
-      const btnClose = document.getElementById("mapOverlayClose");
-      const fullscreenDiv = document.getElementById("mapFullscreen");
-      let fullMap = null;
-
-      btnFullscreen.addEventListener("click", () => {
-        overlay.classList.remove("hidden");
-        fullscreenDiv.innerHTML = "";
-        fullMap = L.map("mapFullscreen").setView(map.getCenter(), map.getZoom());
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-          attribution: "&copy; OpenStreetMap contributors",
-        }).addTo(fullMap);
-        L.marker([14.6928, -17.4467])
-          .addTo(fullMap)
-          .bindPopup("Projet NutriChain - Dakar");
-      });
-
-      btnClose.addEventListener("click", () => {
-        overlay.classList.add("hidden");
-        if (fullMap) {
-          fullMap.remove();
-          fullMap = null;
-        }
-        fullscreenDiv.innerHTML = "";
-      });
+        .addTo(fullMap)
+        .bindPopup("NutriChain project - Dakar");
     });
-  </script>
+
+    btnClose.addEventListener("click", () => {
+      overlay.classList.add("hidden");
+      if (fullMap) {
+        fullMap.remove();
+        fullMap = null;
+      }
+      fullscreenDiv.innerHTML = "";
+    });
+  });
+</script>
 </body>
 </html>
-

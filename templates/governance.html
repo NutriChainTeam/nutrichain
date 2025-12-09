@@ -1,44 +1,8 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>NutriChain Gouvernance</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
-    body { background-color: #0f172a; color: #e5e7eb; }
-    .card { background-color: #020617; border: 1px solid #1f2937; border-radius: 0.75rem; }
-  </style>
-</head>
-<body class="min-h-screen p-4 md:p-8">
-  <header class="mb-8 flex flex-col md:flex-row justify-between items-center border-b border-slate-800 pb-4">
-    <div>
-      <h1 class="text-2xl md:text-3xl font-bold text-white">NutriChain DAO</h1>
-      <p class="text-xs text-slate-400 mt-1">Propositions et impact des dons par région</p>
-    </div>
-    <a href="/" class="mt-3 md:mt-0 text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1">
-      <i data-lucide="arrow-left" class="w-3 h-3"></i> Retour au dashboard
-    </a>
-  </header>
-
-  <main class="space-y-6 max-w-5xl mx-auto">
-    <!-- FORMULAIRE DE CRÉATION -->
-    <section class="card p-4 mb-4">
-      <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
-        <i data-lucide="file-plus" class="w-5 h-5 text-emerald-400"></i>
-        Créer une nouvelle proposition
-      </h2>
-      <form id="newProposalForm" class="space-y-2 text-xs">
-        <div>
-          <label class="block text-slate-400 mb-1">Titre</label>
-          <input
-            type="text"
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>NutriChain Gouvernance</title>
+  <title>NutriChain Governance</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -54,123 +18,172 @@
       <div>
         <h1 class="text-2xl font-bold text-white flex items-center gap-2">
           <i data-lucide="scale" class="w-6 h-6 text-emerald-400"></i>
-          NutriChain – Gouvernance
+          NutriChain – Governance
         </h1>
         <p class="text-sm text-slate-400 mt-1">
-          Crée des propositions et vote avec ton poids NCHAIN (ou 1 vote si tu n’indiques pas de wallet).
+          Create proposals and vote with your NCHAIN balance (or 1 vote if you do not specify a wallet).
         </p>
       </div>
-      <a href="/" class="text-xs text-slate-400 hover:text-slate-200 underline">Retour au dashboard</a>
+      <div class="flex items-center gap-3">
+        <a href="/about-governance"
+           class="text-xs text-sky-400 hover:text-sky-300 underline">
+          About governance
+        </a>
+        <a href="/" class="text-xs text-slate-400 hover:text-slate-200 underline">
+          Back to dashboard
+        </a>
+      </div>
     </header>
 
-    <!-- Formulaire de création de proposition -->
+    <!-- Proposal creation form -->
     <section class="card p-5 mb-6">
       <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
         <i data-lucide="file-plus" class="w-5 h-5 text-emerald-400"></i>
-        Créer une proposition
+        Create a proposal
       </h2>
       <form id="proposalForm" class="space-y-3">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Titre</label>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Title</label>
             <input id="titleInput" type="text"
                    class="w-full rounded-md bg-slate-900 border border-slate-700 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                   placeholder="Financer 5 000 repas pour les cantines scolaires à Dakar">
+                   placeholder="Fund 5,000 meals for school canteens in Dakar">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Région</label>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Region</label>
             <input id="regionInput" type="text"
                    class="w-full rounded-md bg-slate-900 border border-slate-700 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                   placeholder="Afrique de l’Ouest / Dakar">
+                   placeholder="West Africa / Dakar">
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Objectif de repas</label>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Meals target</label>
             <input id="mealsTargetInput" type="number" min="0"
                    class="w-full rounded-md bg-slate-900 border border-slate-700 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                    placeholder="5000">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Statut initial</label>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Initial status</label>
             <select id="statusInput"
                     class="w-full rounded-md bg-slate-900 border border-slate-700 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500">
-              <option value="open">Ouverte</option>
-              <option value="draft">Brouillon</option>
+              <option value="open">Open</option>
+              <option value="draft">Draft</option>
             </select>
           </div>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Description (optionnel)</label>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Description (optional)</label>
           <textarea id="descriptionInput" rows="3"
                     class="w-full rounded-md bg-slate-900 border border-slate-700 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    placeholder="Décris la proposition, le contexte, les partenaires…"></textarea>
+                    placeholder="Describe the proposal, context, partners…"></textarea>
         </div>
         <div class="flex items-center justify-between">
           <p id="proposalStatus" class="text-xs text-slate-400"></p>
           <button type="submit"
                   class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            Créer la proposition
+            Create proposal
           </button>
         </div>
       </form>
     </section>
 
-    <!-- Wallet pour le vote -->
+    <!-- Wallet for voting -->
     <section class="card p-5 mb-6">
       <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
         <i data-lucide="wallet" class="w-5 h-5 text-emerald-400"></i>
-        Wallet Hedera pour le vote
+        Hedera wallet for voting
       </h2>
       <p class="text-xs text-slate-400 mb-3">
-        Si tu renseignes ton compte Hedera (ex. <code>0.0.123456</code>), ton vote sera pondéré par ton solde NCHAIN.  
-        Si tu laisses vide, ton vote comptera pour 1.
+        If you provide your Hedera account (e.g. <code>0.0.123456</code>), your vote will be weighted by your NCHAIN balance.
+        If you leave it empty, your vote will count as 1.
       </p>
       <div class="flex flex-col sm:flex-row gap-3 items-center">
         <input id="wallet-id" type="text"
                class="w-full sm:flex-1 rounded-md bg-slate-900 border border-slate-700 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                placeholder="0.0.123456">
         <span class="text-[11px] text-slate-500">
-          Format : shard.realm.account (Hedera mainnet/testnet).
+          Format: shard.realm.account (Hedera mainnet/testnet).
         </span>
+      </div>
+      <div class="mt-3 text-xs text-slate-400">
+        Your voting power:
+        <span id="votingPowerValue" class="font-semibold text-emerald-400">0.0</span>
+        NCHAIN
       </div>
     </section>
 
-    <!-- Liste des propositions -->
+    <!-- Proposals list -->
     <section class="card p-5">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg font-semibold flex items-center gap-2">
           <i data-lucide="list-checks" class="w-5 h-5 text-emerald-400"></i>
-          Propositions en cours
+          Open proposals
         </h2>
         <button id="refreshBtn"
                 class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-slate-700 text-xs text-slate-300 hover:border-emerald-500 hover:text-emerald-400">
           <i data-lucide="refresh-cw" class="w-3 h-3"></i>
-          Rafraîchir
+          Refresh
         </button>
       </div>
       <div id="proposalsList" class="space-y-3">
-        <p id="loadingText" class="text-sm text-slate-400">Chargement des propositions…</p>
+        <p id="loadingText" class="text-sm text-slate-400">Loading proposals…</p>
       </div>
     </section>
   </div>
 
   <script>
+    async function refreshVotingPower(accountId) {
+      const el = document.getElementById('votingPowerValue');
+      if (!el || !accountId) {
+        if (el) el.textContent = '0.0';
+        return;
+      }
+      try {
+        const res = await fetch(`/nchain_balance/${accountId}`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        el.textContent = (data.balance ?? 0).toLocaleString('en-US');
+      } catch (e) {
+        console.error('Error loading voting power', e);
+        el.textContent = '0.0';
+      }
+    }
+
+    async function refreshProposalResults(proposalId) {
+      const el = document.querySelector(`[data-results-id="${proposalId}"]`);
+      if (!el) return;
+      try {
+        const res = await fetch(`/proposals/${proposalId}/results`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const r = data.results || {};
+        const yes = (r.yes ?? 0).toFixed(2);
+        const no = (r.no ?? 0).toFixed(2);
+        const abstain = (r.abstain ?? 0).toFixed(2);
+        el.textContent =
+          `Results: Yes ${yes} / No ${no} / Neutral ${abstain} (weighted NCHAIN).`;
+      } catch (e) {
+        console.error('Error loading results for proposal', proposalId, e);
+        el.textContent = 'Results: unavailable.';
+      }
+    }
+
     async function loadProposals() {
       const list = document.getElementById('proposalsList');
       const loading = document.getElementById('loadingText');
-      if (loading) loading.textContent = 'Chargement des propositions…';
+      if (loading) loading.textContent = 'Loading proposals…';
 
       try {
         const res = await fetch('/proposals');
-        if (!res.ok) throw new Error('Erreur HTTP');
+        if (!res.ok) throw new Error('HTTP error');
         const data = await res.json();
         const proposals = data.proposals || [];
 
         list.innerHTML = '';
         if (!proposals.length) {
-          list.innerHTML = '<p class="text-sm text-slate-400">Aucune proposition pour le moment.</p>';
+          list.innerHTML = '<p class="text-sm text-slate-400">No proposals yet.</p>';
           return;
         }
 
@@ -178,9 +191,10 @@
           const card = document.createElement('div');
           card.className = 'border border-slate-800 rounded-lg p-4 bg-slate-950/60';
 
-          const statusLabel = p.status === 'open' ? 'Ouverte' : (p.status || 'Inconnu');
-          const statusColor = p.status === 'open' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                                 : 'bg-slate-600/20 text-slate-300 border-slate-600/40';
+          const statusLabel = p.status === 'open' ? 'Open' : (p.status || 'Unknown');
+          const statusColor = p.status === 'open'
+            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+            : 'bg-slate-600/20 text-slate-300 border-slate-600/40';
 
           const mealsTarget = p.meals_target || 0;
           const mealsFunded = p.meals_funded || 0;
@@ -188,13 +202,13 @@
           card.innerHTML = `
             <div class="flex items-start justify-between gap-3">
               <div>
-                <h3 class="text-sm font-semibold text-white mb-1">${p.title || 'Sans titre'}</h3>
+                <h3 class="text-sm font-semibold text-white mb-1">${p.title || 'Untitled'}</h3>
                 <p class="text-xs text-slate-400 mb-1">
-                  Région : <span class="text-slate-200">${p.region || 'N/A'}</span>
+                  Region: <span class="text-slate-200">${p.region || 'N/A'}</span>
                 </p>
                 <p class="text-xs text-slate-400">
-                  Objectif repas : <span class="text-slate-200">${mealsTarget}</span> •
-                  Financé : <span class="text-slate-200">${mealsFunded}</span>
+                  Meals target: <span class="text-slate-200">${mealsTarget}</span> •
+                  Funded: <span class="text-slate-200">${mealsFunded}</span>
                 </p>
                 ${p.description ? `<p class="mt-2 text-xs text-slate-400">${p.description}</p>` : ''}
               </div>
@@ -208,28 +222,34 @@
                   class="vote-btn-yes inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white"
                   data-id="${p.id}">
                   <i data-lucide="thumbs-up" class="w-3 h-3"></i>
-                  Oui
+                  Yes
                 </button>
                 <button
                   class="vote-btn-no inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white"
                   data-id="${p.id}">
                   <i data-lucide="thumbs-down" class="w-3 h-3"></i>
-                  Non
+                  No
                 </button>
                 <button
                   class="vote-btn-abstain inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-slate-600 hover:bg-slate-500 text-xs font-semibold text-white"
                   data-id="${p.id}">
                   <i data-lucide="minus" class="w-3 h-3"></i>
-                  Neutre
+                  Neutral
                 </button>
               </div>
-              <p class="text-[11px] text-slate-400" data-status-id="${p.id}">
-                Enregistre ton vote (1 voix ou pondéré NCHAIN selon ton wallet).
-              </p>
+              <div class="flex flex-col items-start gap-1">
+                <p class="text-[11px] text-slate-400" data-status-id="${p.id}">
+                  Record your vote (1 vote or NCHAIN-weighted, depending on your wallet).
+                </p>
+                <p class="text-[11px] text-slate-500" data-results-id="${p.id}">
+                  Results: loading…
+                </p>
+              </div>
             </div>
           `;
 
           list.appendChild(card);
+          refreshProposalResults(p.id);
         });
 
         if (typeof lucide !== 'undefined') {
@@ -238,8 +258,8 @@
 
         attachVoteHandlers();
       } catch (e) {
-        console.error('Erreur chargement propositions', e);
-        if (loading) loading.textContent = 'Erreur lors du chargement des propositions.';
+        console.error('Error loading proposals', e);
+        if (loading) loading.textContent = 'Error while loading proposals.';
       }
     }
 
@@ -259,13 +279,13 @@
       const description = descriptionInput.value.trim();
 
       if (!title) {
-        statusText.textContent = 'Le titre est obligatoire.';
+        statusText.textContent = 'Title is required.';
         statusText.className = 'text-xs text-rose-400';
         return;
       }
 
       try {
-        statusText.textContent = 'Envoi…';
+        statusText.textContent = 'Sending…';
         statusText.className = 'text-xs text-slate-400';
 
         const res = await fetch('/proposals', {
@@ -282,12 +302,12 @@
 
         const data = await res.json();
         if (!res.ok) {
-          statusText.textContent = data.message || 'Erreur lors de la création.';
+          statusText.textContent = data.message || 'Error while creating proposal.';
           statusText.className = 'text-xs text-rose-400';
           return;
         }
 
-        statusText.textContent = data.message || 'Proposition créée.';
+        statusText.textContent = data.message || 'Proposal created.';
         statusText.className = 'text-xs text-emerald-400';
 
         titleInput.value = '';
@@ -298,7 +318,7 @@
         loadProposals();
       } catch (e) {
         console.error(e);
-        statusText.textContent = 'Erreur lors de la création.';
+        statusText.textContent = 'Error while creating proposal.';
         statusText.className = 'text-xs text-rose-400';
       }
     }
@@ -333,13 +353,21 @@
           sendVote(id, 'abstain');
         });
       });
+
+      const walletInput = document.getElementById('wallet-id');
+      if (walletInput) {
+        walletInput.addEventListener('change', () => {
+          const accountId = walletInput.value.trim();
+          refreshVotingPower(accountId);
+        });
+      }
     }
 
     async function sendVote(proposalId, choice) {
       const walletId = getWalletId();
       const statusP = document.querySelector(`[data-status-id="${proposalId}"]`);
       if (statusP) {
-        statusP.textContent = 'Envoi du vote…';
+        statusP.textContent = 'Sending vote…';
         statusP.className = 'text-[11px] text-slate-400';
       }
 
@@ -349,14 +377,14 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             choice: choice,
-            wallet: walletId   // envoi du wallet au backend
+            wallet: walletId
           })
         });
 
         const data = await res.json();
         if (!res.ok) {
           if (statusP) {
-            statusP.textContent = data.message || 'Erreur lors du vote.';
+            statusP.textContent = data.message || 'Error while voting.';
             statusP.className = 'text-[11px] text-rose-400';
           }
           return;
@@ -364,13 +392,15 @@
 
         if (statusP) {
           const w = (data.weight !== undefined && data.weight !== null) ? data.weight : '1.0';
-          statusP.textContent = data.message || `Vote enregistré (poids ${w}).`;
+          statusP.textContent = data.message || `Vote recorded (weight ${w}).`;
           statusP.className = 'text-[11px] text-emerald-400';
         }
+
+        refreshProposalResults(proposalId);
       } catch (e) {
         console.error(e);
         if (statusP) {
-          statusP.textContent = 'Impossible d’enregistrer le vote. Réessaie.';
+          statusP.textContent = 'Unable to record vote. Please try again.';
           statusP.className = 'text-[11px] text-rose-400';
         }
       }

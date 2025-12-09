@@ -1,0 +1,8 @@
+{
+  "type": "change_trust",
+  "asset": {
+    "code": "BZNX",
+    "issuer": "GA7IJB2ZLHMPQRCIQ4J4BVPJWEQXRUVPHYWX5NEESAD7IZEGLLMK7OCL"
+  },
+  "limit": "1000000"
+}
