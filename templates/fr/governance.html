@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NutriChain Governance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { background-color: #0f172a; color: #e5e7eb; }
+    .card { background-color: #020617; border: 1px solid #1f2937; border-radius: 0.75rem; }
+    .badge { border-radius: 9999px; padding: 0.125rem 0.5rem; font-size: 0.75rem; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <header class="mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+          <i data-lucide="scale" class="w-6 h-6 text-emerald-400"></i>
+          NutriChain – Governance
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+          Create proposals and vote with your NCHAIN balance (or 1 vote if you do not specify a wallet).
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/about-governance"
+           class="text-xs text-sky-400 hover:text-sky-300 underline">
+          About governance
+        </a>
+        <a href="/" class="text-xs text-slate-400 hover:text-slate-200 underline">
+          Back to dashboard
+        </a>
+      </div>
+    </header>
+
+    <!-- Proposal creation form -->
+    <section class="card p-5 mb-6">
+      <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+        <i data-lucide="file-plus" class="w-5 h-5 text-emerald-400"></i>
+        Create a proposal
+      </h2>
+      <form id="proposalForm" class="space-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Title</label>
+            <input id="titleInput" type="text"
+                   class="w-full rounded-md bg-slate-900 border border-slate-700 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                   placeholder="Fund 5,000 meals for school canteens in Dakar">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Region</label>
+            <input id="regionInput" type="text"
+                   class="w-full rounded-md bg-slate-900 border border-slate-700 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                   placeholder="West Africa / Dakar">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Meals target</label>
+            <input id="mealsTargetInput" type="number" min="0"
+                   class="w-full rounded-md bg-slate-900 border border-slate-700 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                   placeholder="5000">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Initial status</label>
+            <select id="statusInput"
+                    class="w-full rounded-md bg-slate-900 border border-slate-700 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+              <option value="open">Open</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Description (optional)</label>
+          <textarea id="descriptionInput" rows="3"
+                    class="w-full rounded-md bg-slate-900 border border-slate-700 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    placeholder="Describe the proposal, context, partners…"></textarea>
+        </div>
+        <div class="flex items-center justify-between">
+          <p id="proposalStatus" class="text-xs text-slate-400"></p>
+          <button type="submit"
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            Create proposal
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Wallet for voting -->
+    <section class="card p-5 mb-6">
+      <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+        <i data-lucide="wallet" class="w-5 h-5 text-emerald-400"></i>
+        Hedera wallet for voting
+      </h2>
+      <p class="text-xs text-slate-400 mb-3">
+        If you provide your Hedera account (e.g. <code>0.0.123456</code>), your vote will be weighted by your NCHAIN balance.
+        If you leave it empty, your vote will count as 1.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3 items-center">
+        <input id="wallet-id" type="text"
+               class="w-full sm:flex-1 rounded-md bg-slate-900 border border-slate-700 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+               placeholder="0.0.123456">
+        <span class="text-[11px] text-slate-500">
+          Format: shard.realm.account (Hedera mainnet/testnet).
+        </span>
+      </div>
+      <div class="mt-3 text-xs text-slate-400">
+        Your voting power:
+        <span id="votingPowerValue" class="font-semibold text-emerald-400">0.0</span>
+        NCHAIN
+      </div>
+    </section>
+
+    <!-- Proposals list -->
+    <section class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold flex items-center gap-2">
+          <i data-lucide="list-checks" class="w-5 h-5 text-emerald-400"></i>
+          Open proposals
+        </h2>
+        <button id="refreshBtn"
+                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-slate-700 text-xs text-slate-300 hover:border-emerald-500 hover:text-emerald-400">
+          <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+          Refresh
+        </button>
+      </div>
+      <div id="proposalsList" class="space-y-3">
+        <p id="loadingText" class="text-sm text-slate-400">Loading proposals…</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    async function refreshVotingPower(accountId) {
+      const el = document.getElementById('votingPowerValue');
+      if (!el || !accountId) {
+        if (el) el.textContent = '0.0';
+        return;
+      }
+      try {
+        const res = await fetch(`/nchain_balance/${accountId}`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        el.textContent = (data.balance ?? 0).toLocaleString('en-US');
+      } catch (e) {
+        console.error('Error loading voting power', e);
+        el.textContent = '0.0';
+      }
+    }
+
+    async function refreshProposalResults(proposalId) {
+      const el = document.querySelector(`[data-results-id="${proposalId}"]`);
+      if (!el) return;
+      try {
+        const res = await fetch(`/proposals/${proposalId}/results`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const r = data.results || {};
+        const yes = (r.yes ?? 0).toFixed(2);
+        const no = (r.no ?? 0).toFixed(2);
+        const abstain = (r.abstain ?? 0).toFixed(2);
+        el.textContent =
+          `Results: Yes ${yes} / No ${no} / Neutral ${abstain} (weighted NCHAIN).`;
+      } catch (e) {
+        console.error('Error loading results for proposal', proposalId, e);
+        el.textContent = 'Results: unavailable.';
+      }
+    }
+
+    async function loadProposals() {
+      const list = document.getElementById('proposalsList');
+      const loading = document.getElementById('loadingText');
+      if (loading) loading.textContent = 'Loading proposals…';
+
+      try {
+        const res = await fetch('/proposals');
+        if (!res.ok) throw new Error('HTTP error');
+        const data = await res.json();
+        const proposals = data.proposals || [];
+
+        list.innerHTML = '';
+        if (!proposals.length) {
+          list.innerHTML = '<p class="text-sm text-slate-400">No proposals yet.</p>';
+          return;
+        }
+
+        proposals.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'border border-slate-800 rounded-lg p-4 bg-slate-950/60';
+
+          const statusLabel = p.status === 'open' ? 'Open' : (p.status || 'Unknown');
+          const statusColor = p.status === 'open'
+            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+            : 'bg-slate-600/20 text-slate-300 border-slate-600/40';
+
+          const mealsTarget = p.meals_target || 0;
+          const mealsFunded = p.meals_funded || 0;
+
+          card.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="text-sm font-semibold text-white mb-1">${p.title || 'Untitled'}</h3>
+                <p class="text-xs text-slate-400 mb-1">
+                  Region: <span class="text-slate-200">${p.region || 'N/A'}</span>
+                </p>
+                <p class="text-xs text-slate-400">
+                  Meals target: <span class="text-slate-200">${mealsTarget}</span> •
+                  Funded: <span class="text-slate-200">${mealsFunded}</span>
+                </p>
+                ${p.description ? `<p class="mt-2 text-xs text-slate-400">${p.description}</p>` : ''}
+              </div>
+              <span class="badge border ${statusColor}">
+                ${statusLabel}
+              </span>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-2">
+                <button
+                  class="vote-btn-yes inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white"
+                  data-id="${p.id}">
+                  <i data-lucide="thumbs-up" class="w-3 h-3"></i>
+                  Yes
+                </button>
+                <button
+                  class="vote-btn-no inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white"
+                  data-id="${p.id}">
+                  <i data-lucide="thumbs-down" class="w-3 h-3"></i>
+                  No
+                </button>
+                <button
+                  class="vote-btn-abstain inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-slate-600 hover:bg-slate-500 text-xs font-semibold text-white"
+                  data-id="${p.id}">
+                  <i data-lucide="minus" class="w-3 h-3"></i>
+                  Neutral
+                </button>
+              </div>
+              <div class="flex flex-col items-start gap-1">
+                <p class="text-[11px] text-slate-400" data-status-id="${p.id}">
+                  Record your vote (1 vote or NCHAIN-weighted, depending on your wallet).
+                </p>
+                <p class="text-[11px] text-slate-500" data-results-id="${p.id}">
+                  Results: loading…
+                </p>
+              </div>
+            </div>
+          `;
+
+          list.appendChild(card);
+          refreshProposalResults(p.id);
+        });
+
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+
+        attachVoteHandlers();
+      } catch (e) {
+        console.error('Error loading proposals', e);
+        if (loading) loading.textContent = 'Error while loading proposals.';
+      }
+    }
+
+    async function createProposal(event) {
+      event.preventDefault();
+      const titleInput = document.getElementById('titleInput');
+      const regionInput = document.getElementById('regionInput');
+      const mealsTargetInput = document.getElementById('mealsTargetInput');
+      const statusInput = document.getElementById('statusInput');
+      const descriptionInput = document.getElementById('descriptionInput');
+      const statusText = document.getElementById('proposalStatus');
+
+      const title = titleInput.value.trim();
+      const region = regionInput.value.trim();
+      const mealsTarget = parseInt(mealsTargetInput.value || '0', 10) || 0;
+      const statusVal = statusInput.value || 'open';
+      const description = descriptionInput.value.trim();
+
+      if (!title) {
+        statusText.textContent = 'Title is required.';
+        statusText.className = 'text-xs text-rose-400';
+        return;
+      }
+
+      try {
+        statusText.textContent = 'Sending…';
+        statusText.className = 'text-xs text-slate-400';
+
+        const res = await fetch('/proposals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: title,
+            region: region,
+            meals_target: mealsTarget,
+            status: statusVal,
+            description: description
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          statusText.textContent = data.message || 'Error while creating proposal.';
+          statusText.className = 'text-xs text-rose-400';
+          return;
+        }
+
+        statusText.textContent = data.message || 'Proposal created.';
+        statusText.className = 'text-xs text-emerald-400';
+
+        titleInput.value = '';
+        regionInput.value = '';
+        mealsTargetInput.value = '';
+        descriptionInput.value = '';
+
+        loadProposals();
+      } catch (e) {
+        console.error(e);
+        statusText.textContent = 'Error while creating proposal.';
+        statusText.className = 'text-xs text-rose-400';
+      }
+    }
+
+    function getWalletId() {
+      const walletInput = document.getElementById('wallet-id');
+      return walletInput ? walletInput.value.trim() : '';
+    }
+
+    function attachVoteHandlers() {
+      const yesButtons = document.querySelectorAll('.vote-btn-yes');
+      const noButtons = document.querySelectorAll('.vote-btn-no');
+      const abstainButtons = document.querySelectorAll('.vote-btn-abstain');
+
+      yesButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          sendVote(id, 'yes');
+        });
+      });
+
+      noButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          sendVote(id, 'no');
+        });
+      });
+
+      abstainButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          sendVote(id, 'abstain');
+        });
+      });
+
+      const walletInput = document.getElementById('wallet-id');
+      if (walletInput) {
+        walletInput.addEventListener('change', () => {
+          const accountId = walletInput.value.trim();
+          refreshVotingPower(accountId);
+        });
+      }
+    }
+
+    async function sendVote(proposalId, choice) {
+      const walletId = getWalletId();
+      const statusP = document.querySelector(`[data-status-id="${proposalId}"]`);
+      if (statusP) {
+        statusP.textContent = 'Sending vote…';
+        statusP.className = 'text-[11px] text-slate-400';
+      }
+
+      try {
+        const res = await fetch(`/vote/${proposalId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            choice: choice,
+            wallet: walletId
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          if (statusP) {
+            statusP.textContent = data.message || 'Error while voting.';
+            statusP.className = 'text-[11px] text-rose-400';
+          }
+          return;
+        }
+
+        if (statusP) {
+          const w = (data.weight !== undefined && data.weight !== null) ? data.weight : '1.0';
+          statusP.textContent = data.message || `Vote recorded (weight ${w}).`;
+          statusP.className = 'text-[11px] text-emerald-400';
+        }
+
+        refreshProposalResults(proposalId);
+      } catch (e) {
+        console.error(e);
+        if (statusP) {
+          statusP.textContent = 'Unable to record vote. Please try again.';
+          statusP.className = 'text-[11px] text-rose-400';
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('proposalForm');
+      const refreshBtn = document.getElementById('refreshBtn');
+
+      if (form) form.addEventListener('submit', createProposal);
+      if (refreshBtn) refreshBtn.addEventListener('click', loadProposals);
+
+      loadProposals();
+
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    });
+  </script>
+</body>
+</html>
+

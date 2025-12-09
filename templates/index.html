@@ -1,15 +1,10 @@
-#!/bin/bash
-
-PROJET_DIR=~/nutrichain_restored
-
-# Créer index.html avec design complet
 cat <<EOF > "$PROJET_DIR/templates/index.html"
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NutriChain - Blockchain Humanitaire</title>
+  <title>NutriChain - Humanitarian Blockchain</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/alerts.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/wallet.css') }}" />
@@ -70,12 +65,12 @@ cat <<EOF > "$PROJET_DIR/templates/index.html"
 <body>
 <header>
   <div class="wallet-section">
-    <button id="walletButton">Connecter Wallet</button>
+    <button id="walletButton">Connect Wallet</button>
     <span id="walletAddress" style="display:none; margin-left: 10px; font-family: monospace;"></span>
   </div>
 </header>
 <main>
-  <h1>Bienvenue sur NutriChain</h1>
+  <h1>Welcome to NutriChain</h1>
   <div id="map"></div>
 </main>
 
@@ -93,9 +88,3 @@ cat <<EOF > "$PROJET_DIR/templates/index.html"
 </html>
 EOF
 
-# Créer fichiers CSS vides pour ne pas casser le style lié
-mkdir -p "$PROJET_DIR/static/css"
-touch "$PROJET_DIR/static/css/alerts.css"
-touch "$PROJET_DIR/static/css/wallet.css"
-
-echo "Le design complet a été restauré. Relancez votre serveur Flask et rechargez la page."
