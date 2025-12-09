@@ -1,9 +1,7 @@
-
 import os
 import requests
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
-import requests
 
 # ================= HEDERA SDK =================
 
@@ -22,15 +20,20 @@ except Exception as e:
 
 app = Flask(__name__)
 
+# --- Hedera / Mirror constants ---
 MIRROR_BASE = "https://mainnet-public.mirrornode.hedera.com"
-NCHAIN_TOKEN_ID = "0.0.10136204"  # factorized here
+NCHAIN_TOKEN_ID_STR = "0.0.10136204"   # pour Mirror Node (toujours une chaîne)
+# ---------------------------------
 
 proposals_db = []
 votes_db = []
 
 
 def get_nchain_balance(account_id: str) -> float:
-    url = f"{MIRROR_BASE}/api/v1/tokens/{NCHAIN_TOKEN_ID}/balances"
+    """
+    Lit le solde NCHAIN via le Mirror Node en utilisant l'ID de token chaîne.
+    """
+    url = f"{MIRROR_BASE}/api/v1/tokens/{NCHAIN_TOKEN_ID_STR}/balances"
     params = {"account.id": account_id}
     r = requests.get(url, params=params, timeout=10)
     r.raise_for_status()
@@ -141,9 +144,9 @@ linked_wallets = {}
 # ========== HEDERA CONFIG ==========
 HEDERA_NETWORK = "testnet"  # testnet for dev
 
+# Objet TokenId pour les transferts on‑chain uniquement
 if hedera_available:
-    # NCHAIN token ID on the chosen network
-    NCHAIN_TOKEN_ID = TokenId.fromString("0.0.10136204")
+    NCHAIN_TOKEN_ID = TokenId.fromString(NCHAIN_TOKEN_ID_STR)
 
     if HEDERA_NETWORK == "testnet":
         hedera_client = Client.forTestnet()
@@ -201,6 +204,8 @@ def send_nchain(to_account: str, amount_tokens: float) -> str:
     receipt = tx_response.getReceipt(hedera_client)
     return str(receipt.status)
 # ---------------------------------
+
+
 @app.route("/about-governance")
 def about_governance():
     return render_template("about_governance.html")
@@ -296,13 +301,10 @@ def donate():
             "donations_by_region": donations_by_region,
             "proposal": target_proposal,
             "hedera_account": hedera_account,
-            "nchain_token_id": str(NCHAIN_TOKEN_ID) if NCHAIN_TOKEN_ID else None,
+            "nchain_token_id": NCHAIN_TOKEN_ID_STR,
             "nchain_tx_status": str(tx_status),
         }
     ), 201
-
-
-MIRROR_BASE = "https://mainnet-public.mirrornode.hedera.com"
 
 
 @app.route("/nchain_balance/<account_id>")
@@ -315,7 +317,7 @@ def nchain_balance(account_id):
     return jsonify(
         {
             "account_id": account_id,
-            "token_id": "0.0.10136204",
+            "token_id": NCHAIN_TOKEN_ID_STR,
             "symbol": "NCHAIN",
             "balance": balance,
         }
@@ -329,10 +331,6 @@ def nchain_balance_aid():
 
 @app.route("/link_wallet", methods=["POST"])
 def link_wallet():
-    """
-    Link a wallet (Hedera or EVM) to the NutriChain profile.
-    In‑memory storage in linked_wallets for the dashboard.
-    """
     data = request.get_json(force=True) or {}
 
     account = data.get("account")          # e.g.: 0.0.123456 (Hedera)
@@ -355,9 +353,6 @@ def link_wallet():
 
 @app.route("/linked_wallet/<account_id>", methods=["GET"])
 def linked_wallet(account_id):
-    """
-    Returns the EVM address linked to a given Hedera account, if available.
-    """
     evm_address = linked_wallets.get(account_id)
     if not evm_address:
         return jsonify({"error": "No wallet linked for this account"}), 404
