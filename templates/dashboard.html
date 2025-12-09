@@ -1,18 +1,19 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>NutriChain Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS (dev) -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Leaflet CSS -->
     <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-        crossorigin=""
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
     />
 
     <!-- Lucide icons -->
@@ -142,34 +143,34 @@
                         <!-- ACTION BUTTONS -->
                         <div class="flex flex-wrap gap-3 mb-4">
                             <a href="/donate"
-                               class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white">
+                               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white">
                                 <i data-lucide="donate" class="w-4 h-4"></i>
                                 Make a donation
                             </a>
 
                             <a href="/stake"
-                               class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white">
+                               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white">
                                 <i data-lucide="layers" class="w-4 h-4"></i>
                                 Stake NUTRI
                             </a>
 
                             <button
                               id="connectWalletBtn"
-                              class="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-sm font-semibold text-gray-900 flex">
+                              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-sm font-semibold text-gray-900">
                                 <i data-lucide="plug-zap" class="w-4 h-4"></i>
                                 Connect a Hedera wallet
                             </button>
 
                             <button
                               id="wcConnectBtn"
-                              class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-sm font-semibold text-gray-900 flex">
+                              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-sm font-semibold text-gray-900">
                                 <i data-lucide="wallet" class="w-4 h-4"></i>
                                 Connect Wallet (WalletConnect)
                             </button>
 
                             <button
                               id="openNutriWalletBtn"
-                              class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-sm font-semibold text-gray-900 flex"
+                              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-sm font-semibold text-gray-900"
                               onclick="window.open('http://localhost:3000', '_blank')"
                             >
                                 <i data-lucide="external-link" class="w-4 h-4"></i>
@@ -352,13 +353,17 @@
                     <section id="chainSection" class="section mt-10">
                         <h2 class="text-xl font-semibold mb-4 text-white">NCHAIN chain / blockchain</h2>
                         <p class="text-sm text-slate-400 mb-3">
-                            Details about the NCHAIN token, treasury account, and read‑only access via Mirror Node.
+                            Details about the NCHAIN token, treasury account, and read-only access via Mirror Node.
                         </p>
                         <ul class="list-disc list-inside text-sm text-slate-300 space-y-1">
                             <li>NCHAIN token ID: 0.0.10136204</li>
                             <li>Tracked treasury account: 0.0.10128148</li>
-                            <li>Balances read via Mirror Node (read‑only)</li>
+                            <li>Balances read via Mirror Node (read-only)</li>
                         </ul>
+                        <p class="text-sm text-slate-400 mt-3">
+                          Linked wallet:
+                          <span id="linkedWalletSpan">unknown</span>
+                        </p>
                     </section>
 
                     <!-- MAP SECTION -->
@@ -395,33 +400,53 @@
             </div>
 
             <!-- FOOTER -->
-            <footer class="mt-12 pt-8 border-t border-[#30363d] text-center text-sm text-gray-400">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <h4 class="text-white font-semibold mb-3">About</h4>
-                        <p class="text-gray-400">
-                            NutriChain links NCHAIN token transparency to real meals impact,
-                            with decentralized and verifiable governance.
-                        </p>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-3">Resources</h4>
-                        <ul class="text-gray-400 space-y-1">
-                            <li>Technical documentation</li>
-                            <li>Hedera explorer</li>
-                            <li>Governance interface</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-3">Contact</h4>
-                        <p class="text-gray-400 text-sm flex items-center justify-center">
-                            <i data-lucide="mail" class="w-4 h-4 mr-2"></i>contact@nutrichain.org
-                        </p>
-                    </div>
+            <footer class="mt-16 border-t border-slate-800 bg-slate-950/80">
+              <div class="mx-auto max-w-6xl px-4 py-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div class="text-xs text-slate-400">
+                  <p class="font-semibold text-slate-200">NutriChain</p>
+                  <p class="mt-1">
+                    Transparent humanitarian treasury on Hedera.
+                  </p>
+                  <p class="mt-1">
+                    © 2025 NutriChain. All rights reserved.
+                  </p>
                 </div>
-                <div class="border-t border-[#30363d] pt-6">
-                    <p>© 2025 NutriChain. Open Source MIT License.</p>
+
+                <div class="flex items-center gap-5">
+                  <!-- X -->
+                  <a href="https://x.com/NutriChain"
+                     target="_blank" rel="noopener noreferrer"
+                     class="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-slate-100 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                         class="h-5 w-5 fill-current">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.003-6.545-5.732 6.545H2.127l7.73-8.828L1.676 2.25h6.59l4.546 5.953 5.432-5.953z"/>
+                    </svg>
+                    <span>X</span>
+                  </a>
+
+                  <!-- Discord -->
+                  <a href="https://discord.gg/TON_INVITE"
+                     target="_blank" rel="noopener noreferrer"
+                     class="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-slate-100 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.14 96.36"
+                         class="h-5 w-5 fill-current">
+                      <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,48,6.83,72.37,72.37,0,0,0,44.64,0,105.89,105.89,0,0,0,18.39,8.09C2.68,31.65-1.62,54.6.54,77.24A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25,68.42,68.42,0,0,1,27.06,79.2c1.17-.84,2.31-1.7,3.41-2.59A70.38,70.38,0,0,0,50,84.41a70.53,70.53,0,0,0,19.57-7.8c1.11.9,2.25,1.76,3.42,2.59A68.23,68.23,0,0,1,60,85.28a77.25,77.25,0,0,0,6.89,11.11A105.25,105.25,0,0,0,99,77.24C101.46,51.63,95.14,29,107.7,8.07ZM42.52,65.69C36.73,65.69,32,60.38,32,54s4.59-11.74,10.48-11.74S53,47.6,53,54,48.31,65.69,42.52,65.69Zm42.1,0C78.83,65.69,74.1,60.38,74.1,54s4.58-11.74,10.47-11.74S95,47.6,95,54,90.35,65.69,84.62,65.69Z"/>
+                    </svg>
+                    <span>Discord</span>
+                  </a>
+
+                  <!-- Telegram -->
+                  <a href="https://t.me/TON_TELEGRAM"
+                     target="_blank" rel="noopener noreferrer"
+                     class="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-slate-100 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"
+                         class="h-5 w-5 fill-current">
+                      <path d="M120,0C53.73,0,0,53.73,0,120s53.73,120,120,120,120-53.73,120-120S186.27,0,120,0Zm58.42,82.27-18.9,89.2c-1.43,6.36-5.2,7.93-10.54,4.94l-29.1-21.45-14,13.49a7.35,7.35,0,0,1-5.88,2.87l2.1-29.82,54.27-49a2.47,2.47,0,0,0-3.05-3.9L84.63,130.07,55.7,121c-6.3-2-6.44-6.3,1.31-9.34l113.8-43.86C176.91,65.84,180.76,69.08,178.42,82.27Z"/>
+                    </svg>
+                    <span>Telegram</span>
+                  </a>
                 </div>
+              </div>
             </footer>
         </div>
     </div>
@@ -429,10 +454,10 @@
 
 <!-- Leaflet JS -->
 <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin="">
-</script>
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
 
 <script>
     let map;
@@ -583,22 +608,16 @@
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
-
-        // test call with a known accountId
-        loadLinkedWallet("0.0.7314686");
+        // On ne spamme pas un accountId de test inexistant
+        // loadLinkedWallet("0.0.7314686");
     });
 </script>
-
-<p class="text-sm text-slate-400">
-  Linked wallet:
-  <span id="linkedWalletSpan">unknown</span>
-</p>
 
 <script>
     // Treasury account ID injected by Flask
     const treasuryId = "{{ treasury_id }}";
 
-    // Get NCHAIN balance of the treasury
+    // Get NCHAIN balance of the treasury (log debug)
     fetch(`/nchain_balance/${treasuryId}`)
       .then((response) => {
         if (!response.ok) {
@@ -608,13 +627,12 @@
       })
       .then((data) => {
         console.log("Treasury NCHAIN balance:", data);
-        // document.getElementById("treasury-balance").textContent = data.balance ?? "—";
       })
       .catch((err) => {
         console.error(err);
       });
 
-    // Get a linked wallet (if any) for this account
+    // Get a linked wallet (if any) for this account (log debug)
     fetch(`/linked_wallet/${treasuryId}`)
       .then((response) => {
         if (response.status === 404) {
@@ -629,61 +647,11 @@
       .then((info) => {
         if (!info) return;
         console.log("Linked wallet:", info);
-        // document.getElementById("linked-wallet-address").textContent = info.evm_address;
       })
       .catch((err) => {
         console.error(err);
       });
 </script>
-
-<!-- Second Leaflet block (kept minimal, reusing same texts) -->
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const map2 = L.map("map").setView([14.6928, -17.4467], 5); // Dakar / West Africa
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap contributors",
-    }).addTo(map2);
-
-    L.marker([14.6928, -17.4467])
-      .addTo(map2)
-      .bindPopup("NutriChain project - Dakar");
-
-    const overlay = document.getElementById("mapOverlay");
-    const btnFullscreen = document.getElementById("mapFullscreenBtn");
-    const btnClose = document.getElementById("mapOverlayClose");
-    const fullscreenDiv = document.getElementById("mapFullscreen");
-    let fullMap = null;
-
-    btnFullscreen.addEventListener("click", () => {
-      overlay.classList.remove("hidden");
-      fullscreenDiv.innerHTML = "";
-      fullMap = L.map("mapFullscreen").setView(map2.getCenter(), map2.getZoom());
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap contributors",
-      }).addTo(fullMap);
-      L.marker([14.6928, -17.4467])
-        .addTo(fullMap)
-        .bindPopup("NutriChain project - Dakar");
-    });
-
-    btnClose.addEventListener("click", () => {
-      overlay.classList.add("hidden");
-      if (fullMap) {
-        fullMap.remove();
-        fullMap = null;
-      }
-      fullscreenDiv.innerHTML = "";
-    });
-  });
-</script>
 </body>
 </html>
+
