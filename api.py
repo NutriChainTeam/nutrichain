@@ -3,8 +3,19 @@ import requests
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 
-# ================= HEDERA SDK =================
+# ================= FIRESTORE =================
+import firebase_admin
+from firebase_admin import credentials, firestore
 
+# Fichier de clé de service (à adapter)
+SERVICE_ACCOUNT_FILE = os.environ.get("FIREBASE_SERVICE_ACCOUNT", "serviceAccountKey.json")
+
+firebase_cred = credentials.Certificate(SERVICE_ACCOUNT_FILE)
+firebase_app = firebase_admin.initialize_app(firebase_cred)
+db = firestore.client()
+# ============================================
+
+# ================= HEDERA SDK =================
 hedera_available = True
 try:
     from hedera import (
@@ -17,16 +28,72 @@ try:
 except Exception as e:
     hedera_available = False
     print("Hedera SDK not available on this runtime:", e)
+# =============================================
 
 app = Flask(__name__)
+CORS(app)
 
 # --- Hedera / Mirror constants ---
 MIRROR_BASE = "https://mainnet-public.mirrornode.hedera.com"
 NCHAIN_TOKEN_ID_STR = "0.0.10136204"   # pour Mirror Node (toujours une chaîne)
+
+# Réglages opérateur (pour vrais transferts on‑chain)
+HEDERA_NETWORK = os.environ.get("HEDERA_NETWORK", "testnet")
+OPERATOR_ID_STR = os.environ.get("OPERATOR_ID")       # ex: "0.0.xxxx"
+OPERATOR_KEY_STR = os.environ.get("OPERATOR_KEY")     # clé privée Hedera
 # ---------------------------------
 
 proposals_db = []
 votes_db = []
+
+# ========== DONATIONS MAP ==========
+donations_by_region = {
+    "afrique_ouest": 0,
+    "afrique_est": 0,
+    "moyen_orient": 0,
+    "asie_sud": 0,
+    "afrique_centrale": 0,
+    "afrique_nord": 0,
+    "Dakar": 0,  # accept Dakar
+}
+# ===================================
+
+# ========== PROPOSALS DUMMY DATA ==========
+proposals = [
+    {
+        "id": 1,
+        "region": "afrique_ouest",
+        "title": "Cantine solidaire Dakar",
+        "meals_target": 1000,
+        "meals_funded": 0,
+        "status": "open",
+    }
+]
+# ==========================================
+
+# ========== HEDERA CONFIG ==========
+if hedera_available:
+    NCHAIN_TOKEN_ID = TokenId.fromString(NCHAIN_TOKEN_ID_STR)
+
+    if HEDERA_NETWORK == "testnet":
+        hedera_client = Client.forTestnet()
+    else:
+        hedera_client = Client.forMainnet()
+
+    if OPERATOR_ID_STR and OPERATOR_KEY_STR:
+        OPERATOR_ID = AccountId.fromString(OPERATOR_ID_STR)
+        OPERATOR_KEY = PrivateKey.fromString(OPERATOR_KEY_STR)
+        hedera_client.setOperator(OPERATOR_ID, OPERATOR_KEY)
+    else:
+        OPERATOR_ID = None
+        OPERATOR_KEY = None
+        print("Warning: OPERATOR_ID / OPERATOR_KEY not set, send_nchain will be simulated.")
+else:
+    NCHAIN_TOKEN_ID = None
+    hedera_client = None
+    OPERATOR_ID = None
+    OPERATOR_KEY = None
+# ===================================
 
 
 def get_nchain_balance(account_id: str) -> float:
@@ -47,8 +114,41 @@ def get_nchain_balance(account_id: str) -> float:
     return raw / 1_000_000.0
 
 
+# --- On‑chain NCHAIN transfer ---
+def send_nchain(to_account: str, amount_tokens: float) -> str:
+    """
+    Envoie amount_tokens NCHAIN vers to_account. Si SDK ou opérateur indisponible,
+    renvoie un statut simulé.
+    """
+    if not hedera_available or NCHAIN_TOKEN_ID is None or hedera_client is None:
+        return "SIMULATED_NO_SDK"
+
+    if not OPERATOR_ID or not OPERATOR_KEY:
+        return "SIMULATED_NO_OPERATOR"
+
+    tokens_smallest = int(amount_tokens * 1_000_000)  # 6 decimals
+
+    tx = (
+        TransferTransaction()
+        .addTokenTransfer(NCHAIN_TOKEN_ID, OPERATOR_ID, -tokens_smallest)
+        .addTokenTransfer(NCHAIN_TOKEN_ID, AccountId.fromString(to_account), tokens_smallest)
+    )
+
+    tx.freezeWith(hedera_client)
+    tx.sign(OPERATOR_KEY)
+    tx_response = tx.execute(hedera_client)
+    receipt = tx_response.getReceipt(hedera_client)
+    return str(receipt.status)
+# ---------------------------------
+
+
+# ========== PROPOSALS & VOTES (RAM) ==========
 @app.route("/proposals", methods=["GET", "POST"])
-def proposals():
+def proposals_route():
+    """
+    GET : renvoie les propositions en RAM (proposals_db).
+    POST : crée une nouvelle proposition en RAM (simple démo).
+    """
     if request.method == "GET":
         return jsonify({"proposals": proposals_db})
 
@@ -128,6 +228,7 @@ def proposal_results(proposal_id):
             },
         }
     )
+# ============================================
 
 
 @app.route("/api/donate", methods=["POST"])
@@ -136,74 +237,6 @@ def api_donate():
     # Later: persist to DB or file
     app.logger.info(f"New donation: {data}")
     return jsonify({"status": "ok"}), 200
-
-
-# simple in‑memory registry: { "0.0.x": "0x..." }
-linked_wallets = {}
-
-# ========== HEDERA CONFIG ==========
-HEDERA_NETWORK = "testnet"  # testnet for dev
-
-# Objet TokenId pour les transferts on‑chain uniquement
-if hedera_available:
-    NCHAIN_TOKEN_ID = TokenId.fromString(NCHAIN_TOKEN_ID_STR)
-
-    if HEDERA_NETWORK == "testnet":
-        hedera_client = Client.forTestnet()
-    else:
-        hedera_client = Client.forMainnet()
-else:
-    NCHAIN_TOKEN_ID = None
-    hedera_client = None
-# ===================================
-
-# ========== DONATIONS MAP ==========
-donations_by_region = {
-    "afrique_ouest": 0,
-    "afrique_est": 0,
-    "moyen_orient": 0,
-    "asie_sud": 0,
-    "afrique_centrale": 0,
-    "afrique_nord": 0,
-    "Dakar": 0,  # accept Dakar
-}
-# ===================================
-
-# ========== PROPOSALS DUMMY DATA ==========
-proposals = [
-    {
-        "id": 1,
-        "region": "afrique_ouest",
-        "title": "Cantine solidaire Dakar",
-        "meals_target": 1000,
-        "meals_funded": 0,
-        "status": "open",
-    }
-]
-# ==========================================
-
-
-# --- On‑chain NCHAIN transfer ---
-def send_nchain(to_account: str, amount_tokens: float) -> str:
-    if not hedera_available or NCHAIN_TOKEN_ID is None or hedera_client is None:
-        # On Render (no SDK/Java), simulate success
-        return "SIMULATED_ON_RENDER"
-
-    tokens_smallest = int(amount_tokens * 1_000_000)  # 6 decimals
-    tx = TransferTransaction(
-        token_transfers={
-            str(NCHAIN_TOKEN_ID): {
-                str(OPERATOR_ID): -tokens_smallest,
-                to_account: tokens_smallest,
-            }
-        }
-    )
-    tx.freezeWith(hedera_client)
-    tx.sign(OPERATOR_KEY)
-    tx_response = tx.execute(hedera_client)
-    receipt = tx_response.getReceipt(hedera_client)
-    return str(receipt.status)
-# ---------------------------------
 
 
 @app.route("/about-governance")
@@ -231,8 +264,9 @@ def health():
     return jsonify({"status": "ok"}), 200
 
 
-@app.route("/proposals", methods=["GET"])
+@app.route("/proposals_list", methods=["GET"])
 def list_proposals():
+    # Version simple basée sur la liste "proposals" statique
     return jsonify({"proposals": proposals}), 200
 
 
@@ -329,40 +363,51 @@ def nchain_balance_aid():
     return nchain_balance("0.0.10168905")
 
 
-@app.route("/link_wallet", methods=["POST"])
-def link_wallet():
-    data = request.get_json(force=True) or {}
-
-    account = data.get("account")          # e.g.: 0.0.123456 (Hedera)
-    evm_address = data.get("evm_address")  # e.g.: 0xABC... (EVM on Hedera)
-
-    if not account and not evm_address:
-        return jsonify({"error": "No wallet identifier provided"}), 400
-
-    if account:
-        linked_wallets[account] = evm_address
-
-    return jsonify(
-        {
-            "message": "Wallet linked to NutriChain",
-            "account": account,
-            "evm_address": evm_address,
-        }
-    ), 200
-
-
+# ========== LINKED WALLETS AVEC FIRESTORE ==========
 @app.route("/linked_wallet/<account_id>", methods=["GET"])
 def linked_wallet(account_id):
-    evm_address = linked_wallets.get(account_id)
-    if not evm_address:
+    """
+    Renvoie le wallet lié pour un compte Hedera donné, depuis Firestore.
+    """
+    doc_ref = db.collection("linked_wallets").document(account_id)
+    doc = doc_ref.get()
+    if not doc.exists:
         return jsonify({"error": "No wallet linked for this account"}), 404
 
-    return jsonify(
+    data = doc.to_dict()
+    return jsonify(data), 200
+
+
+@app.route("/linked_wallet", methods=["POST"])
+def post_linked_wallet():
+    """
+    Sauvegarde / met à jour un lien wallet dans Firestore :
+    {
+      "account": "0.0.1234",
+      "evm_address": "0xabc...",
+      "wallet_type": "hashpack" | "walletconnect" | "unknown"
+    }
+    """
+    data = request.get_json(silent=True) or {}
+    account = data.get("account")
+    evm_address = data.get("evm_address")
+    wallet_type = data.get("wallet_type", "unknown")
+
+    if not account:
+        return jsonify({"error": "Missing 'account'"}), 400
+
+    doc_ref = db.collection("linked_wallets").document(account)
+    doc_ref.set(
         {
-            "account": account_id,
+            "account": account,
             "evm_address": evm_address,
-        }
-    ), 200
+            "wallet_type": wallet_type,
+        },
+        merge=True,
+    )
+
+    return jsonify({"status": "ok"}), 201
+# ===================================================
 
 
 @app.route("/")
