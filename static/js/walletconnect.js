@@ -3,14 +3,14 @@
 // -----------------------------------------------------------------------------
 // CONFIG
 // -----------------------------------------------------------------------------
+//
+// TODO: when you bundle a real Hedera WalletConnect / HashConnect SDK,
+// replace connectWithHederaWallet() with the actual connection flow
+// (QR / deep-link to HashPack, etc.) and return a real accountId.
+// -----------------------------------------------------------------------------
 
-// TODO : quand tu auras ton SDK Hedera Wallet Connect bundlé,
-// tu pourras remplacer cette fonction par un vrai flux dAppConnector.openModal()
-// qui renvoie un vrai accountId Hedera.
 async function connectWithHederaWallet() {
-  // Pour l'instant, on garde un flux temporaire pour ne rien casser :
-  // on demande un Hedera ID comme avant, mais TOUT le reste du fichier
-  // (link_wallet, UI, etc.) reste identique.
+  // Temporary simple flow: manual Hedera account prompt.
   const input = prompt("Enter your Hedera account (format shard.realm.num):");
   if (!input) return null;
 
@@ -63,6 +63,15 @@ function updateUIAfterConnect(accountId, wcConnectBtn, linkedLabelEl) {
   if (addrEl) {
     addrEl.textContent = accountId;
   }
+
+  // Inform the simple wallet block on the dashboard, if present
+  if (typeof window !== "undefined" && typeof window.onWalletConnected === "function") {
+    try {
+      window.onWalletConnected(accountId);
+    } catch (e) {
+      console.warn("onWalletConnected callback threw an error:", e);
+    }
+  }
 }
 
 export async function loadTreasuryLinkedWallet(treasuryId, wcConnectBtn, linkedLabelEl) {
@@ -106,7 +115,7 @@ export function setupWalletConnect(treasuryId, wcConnectBtn, linkedLabelEl) {
       await linkWalletOnBackend(treasuryId, accountId);
       updateUIAfterConnect(accountId, wcConnectBtn, linkedLabelEl);
 
-      // On peut mémoriser localement l’accountId pour le vote, etc.
+      // Optional: store locally for other pages if needed
       try {
         localStorage.setItem("hederaAccountId", accountId);
       } catch (e) {

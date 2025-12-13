@@ -177,19 +177,18 @@ def proposals_route():
 def vote(proposal_id):
     data = request.get_json() or {}
     choice = data.get("choice")
-    wallet = data.get("wallet")  # can be None for now
+    wallet = data.get("wallet")
 
     if choice not in ("yes", "no", "abstain"):
         return jsonify({"message": "Invalid choice."}), 400
 
-    # Temporary: if no wallet, use fixed weight 1.0
     if not wallet:
-        weight = 1.0
-    else:
-        try:
-            weight = get_nchain_balance(wallet)
-        except Exception:
-            weight = 0.0
+        return jsonify({"message": "Wallet (accountId) is required."}), 400
+
+    try:
+        weight = get_nchain_balance(wallet)
+    except Exception as e:
+        return jsonify({"message": "Mirror node error", "details": str(e)}), 502
 
     vote_record = {
         "proposal_id": proposal_id,
@@ -412,6 +411,7 @@ def post_linked_wallet():
 
 @app.route("/")
 def index():
+    print(">>> Rendering dashboard.html")
     treasury_id = "0.0.10128148"  # NCHAIN treasury account
     return render_template("dashboard.html", treasury_id=treasury_id)
 

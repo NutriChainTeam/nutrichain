@@ -23,10 +23,10 @@
     <div class="bg-slate-900 border border-slate-700 rounded-xl p-4">
       <form id="donationForm" class="grid grid-cols-1 gap-3 text-xs">
         <div>
-          <label class="block text-slate-400 mb-1">Donor address</label>
+          <label class="block text-slate-400 mb-1">Donor address (Hedera account)</label>
           <input id="donorWallet" type="text"
                  class="w-full px-2 py-1 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-xs"
-                 placeholder="Your address (or off-chain identifier)" required />
+                 placeholder="0.0.123456 (used as wallet_address + hedera_account)" required />
         </div>
 
         <div>
@@ -90,15 +90,19 @@
         </div>
 
         <p class="mt-2 text-[11px] text-slate-400">
-          Step 1: this form records your donation intent on NutriChain (amount, region, destination).<br>
-          Step 2: send the same amount in NCHAIN or HBAR
-          to the Hedera account shown from your wallet (HashPack, etc.).
+          This form records a donation with your Hedera account as both <code>wallet_address</code> and <code>hedera_account</code>.
+          The backend then triggers an on‑chain NCHAIN transfer when possible.
         </p>
       </form>
     </div>
   </div>
 
   <script>
+    function getQueryAccountId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("account") || "";
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       if (window.lucide) {
         window.lucide.createIcons();
@@ -108,9 +112,16 @@
       const beneficiaryType = document.getElementById("beneficiaryType");
       const hederaAccountInput = document.getElementById("hederaAccount");
       const beneficiaryHelp = document.getElementById("beneficiaryHelp");
+      const donorWalletInput = document.getElementById("donorWallet");
 
       const TREASURY_ACCOUNT = "0.0.10128148";
       const AID_ACCOUNT = "0.0.10168905";
+
+      // Pré‑remplissage depuis ?account=... (Option 2)
+      const fromQuery = getQueryAccountId();
+      if (donorWalletInput && fromQuery) {
+        donorWalletInput.value = fromQuery;
+      }
 
       function updateBeneficiary() {
         if (beneficiaryType.value === "aid") {
@@ -128,35 +139,56 @@
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
+        const walletAddress = donorWalletInput.value.trim();
+        if (!walletAddress) {
+          alert("Please provide your Hedera account (donor address).");
+          return;
+        }
+
+        const amountVal = parseInt(document.getElementById("donationAmount").value, 10);
+        if (!Number.isFinite(amountVal) || amountVal <= 0) {
+          alert("Please provide a valid donation amount (NUTRI).");
+          return;
+        }
+
         const payload = {
-          donor_wallet: document.getElementById("donorWallet").value,
+          wallet_address: walletAddress,
           donor_label: document.getElementById("donorLabel").value,
           region: document.getElementById("donationRegion").value,
-          amount_nutri: parseInt(document.getElementById("donationAmount").value, 10),
-          hedera_account: hederaAccountInput.value,
-          destination: beneficiaryType.value
+          amount: amountVal,
+          hedera_account: hederaAccountInput.value
         };
 
         try {
-          const res = await fetch("http://127.0.0.1:5000/api/donate", {
+          const res = await fetch("/donate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
 
+          const data = await res.json();
+
           if (!res.ok) {
-            throw new Error("Server error");
+            console.error("Donate error payload:", data);
+            alert(data.error || "Server error while recording the donation.");
+            return;
           }
 
           alert(
-            "Step 1 OK: donation recorded on NutriChain for " +
-            payload.hedera_account +
-            ".\nStep 2: now send your NCHAIN/HBAR donation to this account from your Hedera wallet."
+            "Donation recorded:\n" +
+            "- Amount: " + payload.amount + " NUTRI\n" +
+            "- Region: " + payload.region + "\n" +
+            "- Beneficiary: " + payload.hedera_account + "\n" +
+            "On‑chain status: " + (data.nchain_tx_status || "unknown")
           );
 
           form.reset();
           beneficiaryType.value = "treasury";
           updateBeneficiary();
+
+          if (fromQuery && donorWalletInput) {
+            donorWalletInput.value = fromQuery;
+          }
         } catch (err) {
           console.error(err);
           alert("Unable to record the donation for now. Please try again later.");
@@ -166,4 +198,3 @@
   </script>
 </body>
 </html>
-

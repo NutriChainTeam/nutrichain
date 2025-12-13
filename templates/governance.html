@@ -21,7 +21,7 @@
           NutriChain – Governance
         </h1>
         <p class="text-sm text-slate-400 mt-1">
-          Create proposals and vote with your NCHAIN balance (or 1 vote if you do not specify a wallet).
+          Create proposals and vote with your NCHAIN balance (1 NCHAIN = 1 vote).
         </p>
       </div>
       <div class="flex items-center gap-3">
@@ -96,8 +96,8 @@
         Hedera wallet for voting
       </h2>
       <p class="text-xs text-slate-400 mb-3">
-        If you provide your Hedera account (e.g. <code>0.0.123456</code>), your vote will be weighted by your NCHAIN balance.
-        If you leave it empty, your vote will count as 1.
+        Provide your Hedera account (e.g. <code>0.0.123456</code>) to have your vote weighted by your NCHAIN balance.
+        Votes without a wallet are no longer accepted.
       </p>
       <div class="flex flex-col sm:flex-row gap-3 items-center">
         <input id="wallet-id" type="text"
@@ -134,6 +134,11 @@
   </div>
 
   <script>
+    function getQueryAccountId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('account') || '';
+    }
+
     async function refreshVotingPower(accountId) {
       const el = document.getElementById('votingPowerValue');
       if (!el || !accountId) {
@@ -239,7 +244,7 @@
               </div>
               <div class="flex flex-col items-start gap-1">
                 <p class="text-[11px] text-slate-400" data-status-id="${p.id}">
-                  Record your vote (1 vote or NCHAIN-weighted, depending on your wallet).
+                  Record your vote (weighted by your NCHAIN wallet).
                 </p>
                 <p class="text-[11px] text-slate-500" data-results-id="${p.id}">
                   Results: loading…
@@ -366,6 +371,15 @@
     async function sendVote(proposalId, choice) {
       const walletId = getWalletId();
       const statusP = document.querySelector(`[data-status-id="${proposalId}"]`);
+
+      if (!walletId) {
+        if (statusP) {
+          statusP.textContent = 'Please enter your Hedera account (or open governance from dashboard wallet link).';
+          statusP.className = 'text-[11px] text-rose-400';
+        }
+        return;
+      }
+
       if (statusP) {
         statusP.textContent = 'Sending vote…';
         statusP.className = 'text-[11px] text-slate-400';
@@ -391,7 +405,7 @@
         }
 
         if (statusP) {
-          const w = (data.weight !== undefined && data.weight !== null) ? data.weight : '1.0';
+          const w = (data.weight !== undefined && data.weight !== null) ? data.weight : '0.0';
           statusP.textContent = data.message || `Vote recorded (weight ${w}).`;
           statusP.className = 'text-[11px] text-emerald-400';
         }
@@ -409,6 +423,13 @@
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('proposalForm');
       const refreshBtn = document.getElementById('refreshBtn');
+      const walletInput = document.getElementById('wallet-id');
+
+      const fromQuery = getQueryAccountId();
+      if (walletInput && fromQuery) {
+        walletInput.value = fromQuery;
+        refreshVotingPower(fromQuery);
+      }
 
       if (form) form.addEventListener('submit', createProposal);
       if (refreshBtn) refreshBtn.addEventListener('click', loadProposals);

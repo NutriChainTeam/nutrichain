@@ -16,9 +16,10 @@
       </a>
     </header>
 
-    <p class="text-xs text-slate-400 mb-4">
+    <p class="text-xs text-slate-400 mb-2">
       Indicative APY 7.25%. This page simulates the potential yield of your NUTRI staking.
     </p>
+    <p id="stakeWalletInfo" class="text-[11px] text-slate-500 mb-4"></p>
 
     <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3 text-xs">
       <div>
@@ -45,6 +46,11 @@
 
   <script>
     const APY = 0.0725;
+
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name) || "";
+    }
 
     function setupStakeSimulation() {
       const btn = document.getElementById('simulateStake');
@@ -77,8 +83,20 @@
     document.addEventListener('DOMContentLoaded', () => {
       setupStakeSimulation();
       if (typeof lucide !== 'undefined') lucide.createIcons();
+
+      const amountParam = getQueryParam("amount");
+      const accountParam = getQueryParam("account");
+
+      const amountEl = document.getElementById('stakeAmount');
+      if (amountEl && amountParam) {
+        amountEl.value = amountParam;
+      }
+
+      const walletInfo = document.getElementById('stakeWalletInfo');
+      if (walletInfo && accountParam) {
+        walletInfo.textContent = `Simulating staking for Hedera account ${accountParam}.`;
+      }
     });
   </script>
 </body>
 </html>
-
