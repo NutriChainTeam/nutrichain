@@ -1,5 +1,5 @@
 {
-  "name": "hedera-walletconnect-test",
+  "name": "frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,10 +9,12 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^7.2.4"
+    "vite": "^7.2.7"
   },
   "dependencies": {
     "@hashgraph/hedera-wallet-connect": "^2.0.4",
-    "@hashgraph/proto": "^2.25.0"
+    "@hashgraph/proto": "^2.25.0",
+    "@hashgraph/sdk": "^2.78.0",
+    "@walletconnect/modal": "^2.7.0"
   }
 }

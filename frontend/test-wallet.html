@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Wallet Connect</title>
+</head>
+<body>
+    <h1>Test Wallet Connect</h1>
+    <button id="6ada14d4e40d08d278a39c212bf50ce9">Connect Wallet</button>
+    <div id="output"></div>
+
+    <script type="module">
+        import { DAppConnector, HederaJsonRpcMethod, HederaSessionEvent, HederaChainId, hederaNamespace } from "@hashgraph/hedera-wallet-connect";
+
+        const projectId = "6ada14d4e409"; // Mets ton ID complet ici
+        const output = document.getElementById("output");
+
+        const dAppConnector = new DAppConnector(
+            projectId,
+            Object.values(HederaJsonRpcMethod),
+            [HederaSessionEvent.ChainChanged, HederaSessionEvent.AccountsChanged],
+            [HederaChainId.Testnet, HederaChainId.Mainnet]
+        );
+
+        document.getElementById("connectBtn").addEventListener("click", async () => {
+            try {
+                output.textContent = "Initializing...";
+                await dAppConnector.init({ logger: "error" });
+                output.textContent = "Opening modal...";
+                const session = await dAppConnector.openModal();
+                output.textContent = "Connected: " + JSON.stringify(session, null, 2);
+            } catch (e) {
+                output.textContent = "Error: " + e.message;
+                console.error(e);
+            }
+        });
+    </script>
+</body>
+</html>

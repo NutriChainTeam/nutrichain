@@ -3,17 +3,6 @@ import requests
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 from datetime import datetime
-import json
-
-# from hedera import PrivateKey
-
-# Pour obtenir la clé publique à partir de la clé privée
-# prikey = PrivateKey.generate()
-# pubkey = prikey.getPublicKey()
-
-# Pour vérifier une signature, utilisez la méthode de la clé publique
-# signature = prikey.sign(b"message")
-# is_valid = pubkey.verify(b"message", signature)
 
 # ================= FIRESTORE =================
 import firebase_admin
@@ -21,13 +10,8 @@ from firebase_admin import credentials, firestore
 
 SERVICE_ACCOUNT_FILE = os.environ.get("FIREBASE_SERVICE_ACCOUNT", "serviceAccountKey.json")
 
-# On vérifie si l'app est déjà initialisée pour éviter les erreurs lors des reloads
-if not firebase_admin._apps:
-    firebase_cred = credentials.Certificate(SERVICE_ACCOUNT_FILE)
-    firebase_app = firebase_admin.initialize_app(firebase_cred)
-else:
-    firebase_app = firebase_admin.get_app()
-
+firebase_cred = credentials.Certificate(SERVICE_ACCOUNT_FILE)
+firebase_app = firebase_admin.initialize_app(firebase_cred)
 db = firestore.client()
 # ============================================
 
@@ -39,9 +23,8 @@ try:
         AccountId,
         PrivateKey,
         TokenId,
-        TransferTransaction
+        TransferTransaction,
     )
-    from hedera.crypto import PublicKey, Signature
 except Exception as e:
     hedera_available = False
     print("Hedera SDK not available on this runtime:", e)
@@ -75,6 +58,8 @@ donations_by_region = {
 # ===================================
 
 # ========== STAKING DATA ==========
+stakes = {}
+rewards = {}
 APY = 0.10
 # ==================================
 
@@ -161,45 +146,14 @@ def send_nchain(to_account: str, amount_tokens: float) -> str:
 
 def calculate_rewards(wallet):
     """Calcule les rewards de staking pour un wallet donné."""
-    doc_ref = db.collection("staking").document(wallet)
-    doc = doc_ref.get()
-    if not doc.exists:
-        return 0.0
-    data = doc.to_dict()
-    if "start_time" not in data:
+    data = stakes.get(wallet)
+    if not data:
         return 0.0
     now = datetime.utcnow()
-    # Gestion robuste du format de date (isoformat parfois avec ou sans timezone)
-    try:
-        start = datetime.fromisoformat(data["start_time"])
-    except ValueError:
-        # Fallback si format different
-        return 0.0
-        
-    duration = (now - start).total_seconds()
-    # Si la date est dans le futur (timezone diff), duration peut être négatif
-    if duration < 0: duration = 0
-    
+    duration = (now - data["start_time"]).total_seconds()
     yearly_seconds = 365 * 24 * 3600
     reward = data["amount"] * APY * (duration / yearly_seconds)
     return reward
-
-
-def get_staking_info(wallet):
-    """Lit l'état du staking depuis Firestore."""
-    doc_ref = db.collection("staking").document(wallet)
-    doc = doc_ref.get()
-    if not doc.exists:
-        return {"staked": False, "amount": 0, "pending_rewards": 0, "start_time": None}
-    data = doc.to_dict()
-    pending = calculate_rewards(wallet)
-    return {
-        "staked": True,
-        "amount": data["amount"],
-        "pending_rewards": pending,
-        "start_time": data["start_time"],
-        "apy": APY
-    }
 
 
 # ========== PROPOSALS & VOTES (RAM) ==========
@@ -255,15 +209,8 @@ def vote(proposal_id):
         "wallet": wallet,
         "choice": choice,
         "weight": weight,
-        "timestamp": datetime.utcnow().isoformat() # Ajout pour l'activity feed
     }
     votes_db.append(vote_record)
-    
-    # Enregistrement optionnel dans Firestore pour persistance et activity feed
-    try:
-        db.collection('votes').add(vote_record)
-    except Exception as e:
-        print(f"Warning: could not save vote to firestore: {e}")
 
     return jsonify({"message": f"Vote '{choice}' recorded.", "weight": weight}), 200
 
@@ -308,33 +255,13 @@ def stake():
     if not wallet or amount <= 0:
         return jsonify({"error": "wallet ou amount invalide"}), 400
 
-    # Vérifier si le wallet est déjà en staking
-    doc_ref = db.collection("staking").document(wallet)
-    doc = doc_ref.get()
-    if doc.exists:
+    if wallet in stakes:
         return jsonify({"error": "Already staking, unstake first"}), 400
 
-    # Enregistrer le staking dans Firestore
-    timestamp = datetime.utcnow().isoformat()
-    doc_ref.set({
-        "wallet": wallet,
+    stakes[wallet] = {
         "amount": amount,
-        "start_time": timestamp,
-        "apy": APY
-    })
-    
-    # Ajout dans une collection historique pour le feed d'activité
-    # (optionnel si tu ne veux afficher que les états actuels, mais mieux pour le feed)
-    try:
-        db.collection('staking_history').add({
-            "wallet": wallet,
-            "amount": amount,
-            "action": "stake",
-            "timestamp": timestamp
-        })
-    except Exception as e:
-        print(f"Warning: could not save staking history: {e}")
-
+        "start_time": datetime.utcnow()
+    }
     return jsonify({"message": "Stake successful", "amount": amount}), 200
 
 
@@ -344,167 +271,47 @@ def unstake():
     data = request.get_json()
     wallet = data.get("wallet")
 
-    if not wallet:
-        return jsonify({"error": "Wallet required"}), 400
-
-    doc_ref = db.collection("staking").document(wallet)
-    doc = doc_ref.get()
-    if not doc.exists:
+    if not wallet or wallet not in stakes:
         return jsonify({"error": "No active stake found"}), 400
 
-    data = doc.to_dict()
-    staked_amount = data["amount"]
     reward = calculate_rewards(wallet)
-
-    # Supprimer le staking de Firestore
-    doc_ref.delete()
-
-    # Sauvegarder les récompenses
-    rewards_ref = db.collection("rewards").document(wallet)
-    rewards_data = rewards_ref.get()
-    current_rewards = rewards_data.to_dict().get("total", 0) if rewards_data.exists else 0
-    rewards_ref.set({"total": current_rewards + reward})
+    staked_amount = stakes[wallet]["amount"]
     
-    # Log historique pour activity feed
-    try:
-        db.collection('staking_history').add({
-            "wallet": wallet,
-            "amount": staked_amount,
-            "reward": reward,
-            "action": "unstake",
-            "timestamp": datetime.utcnow().isoformat()
-        })
-    except Exception as e:
-        print(f"Warning: could not save unstake history: {e}")
+    del stakes[wallet]
+    
+    current_rewards = rewards.get(wallet, 0)
+    rewards[wallet] = current_rewards + reward
 
     return jsonify({
         "message": "Unstake successful",
         "staked_amount": staked_amount,
         "reward": reward,
-        "total_rewards": current_rewards + reward
+        "total_rewards": rewards[wallet]
     }), 200
 
 
 @app.route("/api/staking_info/<wallet>", methods=["GET"])
 def staking_info(wallet):
     """Retourne les informations de staking pour un wallet donné."""
-    info = get_staking_info(wallet)
-    return jsonify(info), 200
+    if wallet not in stakes:
+        return jsonify({"staked": False, "amount": 0, "pending_rewards": 0}), 200
+    
+    pending = calculate_rewards(wallet)
+    return jsonify({
+        "staked": True,
+        "amount": stakes[wallet]["amount"],
+        "pending_rewards": pending,
+        "start_time": stakes[wallet]["start_time"].isoformat(),
+        "apy": APY
+    }), 200
 # ====================================
 
 
 @app.route("/api/donate", methods=["POST"])
 def api_donate():
-    """Route générique de don (si utilisée en dehors de /donate form)"""
     data = request.get_json()
-    # Logique simplifiée, idéalement fusionner avec la route /donate ci-dessous
-    # Pour l'instant on log juste
     app.logger.info(f"New donation: {data}")
-    
-    # Enregistrement pour activity feed si pas déjà fait par l'autre route
-    if data:
-        try:
-            record = data.copy()
-            if 'timestamp' not in record:
-                record['timestamp'] = datetime.utcnow().isoformat()
-            db.collection('donations').add(record)
-        except Exception:
-            pass
-            
     return jsonify({"status": "ok"}), 200
-
-
-# =======================================================
-# NOUVEAU : API ACTIVITY FEED
-# =======================================================
-@app.route('/api/activity', methods=['GET'])
-def get_activity():
-    activities = []
-
-    try:
-        # --- 1. Récupérer les dernières DONATIONS ---
-        # On essaie de lire la collection 'donations'
-        # Si elle n'existe pas encore ou est vide, ça ne plantera pas
-        try:
-            donations_ref = db.collection('donations').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(5)
-            for doc in donations_ref.stream():
-                data = doc.to_dict()
-                donor = data.get('donor_label') or data.get('wallet_address') or 'Anonymous'
-                activities.append({
-                    'type': 'donation',
-                    'icon': '❤️',
-                    'message': f"Donation of {data.get('amount', 0)} NUTRI",
-                    'user': donor[:10] + '...' if len(donor) > 10 else donor,
-                    'timestamp': data.get('timestamp')
-                })
-        except Exception as e:
-            print(f"Activity feed - donations error: {e}")
-
-        # --- 2. Récupérer les derniers VOTES ---
-        # On lit la collection 'votes' (peuplée dans la route /vote)
-        try:
-            votes_ref = db.collection('votes').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(5)
-            for doc in votes_ref.stream():
-                data = doc.to_dict()
-                activities.append({
-                    'type': 'vote',
-                    'icon': '🗳️',
-                    'message': f"Voted '{data.get('choice')}' on Prop #{data.get('proposal_id', '?')}",
-                    'user': (data.get('wallet') or 'Anonymous')[:6] + '...',
-                    'timestamp': data.get('timestamp')
-                })
-        except Exception as e:
-            print(f"Activity feed - votes error: {e}")
-
-        # --- 3. Récupérer les derniers STAKES ---
-        # On utilise 'staking_history' créé plus haut pour avoir l'historique
-        # Sinon on peut lire 'staking' mais on n'aura que l'état actuel
-        try:
-            stakes_ref = db.collection('staking_history').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(5)
-            for doc in stakes_ref.stream():
-                data = doc.to_dict()
-                action = data.get('action', 'stake').capitalize()
-                activities.append({
-                    'type': 'stake',
-                    'icon': '🔒' if action == 'Stake' else '🔓',
-                    'message': f"{action}d {data.get('amount', 0)} NCHAIN",
-                    'user': (data.get('wallet') or 'Anonymous')[:6] + '...',
-                    'timestamp': data.get('timestamp')
-                })
-        except Exception as e:
-            print(f"Activity feed - stakes error: {e}")
-
-        # --- 4. Fusionner et Trier ---
-        # Fonction helper pour parser le timestamp peu importe le format (string ou datetime)
-        def parse_ts(item):
-            ts = item.get('timestamp')
-            if not ts: return datetime.min
-            if isinstance(ts, str):
-                try:
-                    return datetime.fromisoformat(ts.replace('Z', '+00:00'))
-                except:
-                    return datetime.min
-            return ts
-
-        activities.sort(key=parse_ts, reverse=True)
-
-        # --- 5. Nettoyage final pour le JSON ---
-        final_list = []
-        for act in activities[:10]:
-            item = act.copy()
-            # On s'assure que timestamp est une string pour le JSON
-            if not isinstance(item['timestamp'], str):
-                item['timestamp'] = item['timestamp'].isoformat() if item['timestamp'] else ""
-            final_list.append(item)
-
-        return jsonify(final_list), 200
-
-    except Exception as e:
-        print(f"Error fetching activity: {e}")
-        # On renvoie une liste vide plutôt qu'une erreur 500 pour ne pas casser le front
-        return jsonify([]), 200
-
-# =======================================================
 
 
 @app.route("/about-governance")
@@ -584,20 +391,6 @@ def donate():
         return jsonify(
             {"error": "NCHAIN transfer failed", "details": str(e)}
         ), 502
-    
-    # Enregistrement dans Firestore pour l'Activity Feed
-    timestamp = datetime.utcnow().isoformat()
-    try:
-        db.collection('donations').add({
-            "wallet_address": wallet_address,
-            "donor_label": donor_label,
-            "region": region,
-            "amount": amount,
-            "timestamp": timestamp,
-            "tx_status": str(tx_status)
-        })
-    except Exception as e:
-        print(f"Warning: could not save donation to firestore: {e}")
 
     return jsonify(
         {
@@ -680,115 +473,12 @@ def post_linked_wallet():
     return jsonify({"status": "ok"}), 201
 # ===================================================
 
-# ========== HASHPACK CONNECT ==========
-@app.route("/hashpack_connect", methods=["POST"])
-def hashpack_connect():
-    data = request.get_json()
-    wallet_hedera = data.get("wallet_hedera")
-    signature = data.get("signature")
-    message = data.get("message", "Je me connecte à NutriChain")
-
-    if not wallet_hedera or not signature:
-        return jsonify({"error": "Missing wallet or signature"}), 400
-
-    try:
-        # Enregistrement dans Firestore
-        doc_ref = db.collection("linked_wallets").document(wallet_hedera)
-        doc_ref.set({
-            "account": wallet_hedera,
-            "wallet_type": "hashpack",
-            "connected_at": datetime.utcnow().isoformat()
-        }, merge=True)
-
-        return jsonify({"status": "ok", "wallet_type": "hashpack"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# ====================================
 
 @app.route("/")
 def index():
     print(">>> Rendering dashboard.html")
     treasury_id = "0.0.10128148"
     return render_template("dashboard.html", treasury_id=treasury_id)
-
-
-@app.route("/api/login_wallet", methods=["POST"])
-def login_wallet():
-    data = request.get_json() or {}
-    wallet = data.get("wallet")          # adresse EVM (0x...)
-    hedera_account = data.get("hedera")  # optionnel: 0.0.x si tu l’envoies plus tard
-
-    if not wallet:
-        return jsonify({"error": "No wallet provided"}), 400
-
-    try:
-        # On utilise la collection linked_wallets (déjà utilisée ailleurs)
-        doc_ref = db.collection("linked_wallets").document(wallet)
-        payload = {
-            "account": hedera_account or None,
-            "evm_address": wallet,
-            "wallet_type": "evm",
-            "connected_at": datetime.utcnow().isoformat()
-        }
-        # merge=True pour ne pas écraser des infos existantes
-        doc_ref.set(payload, merge=True)
-    except Exception as e:
-        print(f"Firestore error logging login: {e}")
-        return jsonify({"error": "Firestore error"}), 500
-
-    return jsonify({"status": "ok", "wallet": wallet}), 200
-
-
-@app.route("/api/evm_to_hedera", methods=["GET"])
-def evm_to_hedera():
-    """
-    Retourne le compte Hedera lié à une adresse EVM, à partir de la collection linked_wallets.
-    Query param: ?evm=0x....
-    """
-    evm = request.args.get("evm")
-    if not evm:
-        return jsonify({"error": "missing evm"}), 400
-
-    doc_ref = db.collection("linked_wallets").document(evm)
-    doc = doc_ref.get()
-    if not doc.exists:
-        return jsonify({"error": "no link found"}), 404
-
-    data = doc.to_dict()
-    hedera_account = data.get("account")
-    return jsonify({"evm": evm, "hedera": hedera_account}), 200
-
-
-@app.route("/api/link_hedera", methods=["POST"])
-def link_hedera():
-    """
-    Lie une adresse EVM à un compte Hedera (0.0.xxxx) dans linked_wallets.
-    Body JSON: { "evm": "0x...", "hedera": "0.0.xxxx" }
-    """
-    data = request.get_json() or {}
-    evm = data.get("evm")
-    hedera_account = data.get("hedera")
-
-    if not evm or not hedera_account:
-        return jsonify({"error": "Missing evm or hedera"}), 400
-
-    try:
-        doc_ref = db.collection("linked_wallets").document(evm)
-        doc_ref.set(
-            {
-                "evm_address": evm,
-                "account": hedera_account,
-                "wallet_type": "evm",
-                "linked_at": datetime.utcnow().isoformat(),
-            },
-            merge=True,
-        )
-    except Exception as e:
-        print(f"Firestore error linking hedera: {e}")
-        return jsonify({"error": "Firestore error"}), 500
-
-    return jsonify({"status": "ok", "evm": evm, "hedera": hedera_account}), 200
 
 
 if __name__ == "__main__":

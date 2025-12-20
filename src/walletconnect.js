@@ -152,3 +152,10 @@ export function setupWalletConnect(treasuryId, wcConnectBtn, linkedLabelEl) {
     }
   });
 }
+
+export function initNutriWalletConnect(treasuryId: string) {
+  const wcConnectBtn  = document.getElementById("wcConnectBtn");
+  const linkedLabelEl = document.getElementById("linkedWalletSpan");
+  setupWalletConnect(treasuryId, wcConnectBtn, linkedLabelEl);
+  loadTreasuryLinkedWallet(treasuryId, wcConnectBtn, linkedLabelEl);
+}

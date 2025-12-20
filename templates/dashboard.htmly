@@ -1,18 +1,19 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>NutriChain Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS (dev) -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Leaflet CSS -->
     <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-        crossorigin=""
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
     />
 
     <!-- Lucide icons -->
@@ -123,8 +124,9 @@
                     </h2>
 
                     <a href="#statsSection" class="nav-item active">Statistics</a>
-                    <a href="#chainSection" class="nav-item">Chain / Treasury</a>
-                    <a href="#mapSection" class="nav-item">Donations map</a>
+                    <a href="https://www.nutrichain.org/#chainSection" class="nav-item">Chain / Treasury</a>
+                    <a href="https://www.nutrichain.org/#mapSection" class="nav-item">Donations map</a>
+                    <a href="/wallet/" class="nav-item">Mon Wallet</a>
 
                     <hr class="my-3 border-slate-800">
 
@@ -140,41 +142,44 @@
                         <h2 class="text-xl font-semibold mb-4 text-white">Overview</h2>
 
                         <!-- ACTION BUTTONS -->
-                        <div class="flex flex-wrap gap-3 mb-4">
+                        <div class="flex flex-wrap gap-2 mb-4 items-center">
                             <a href="/donate"
-                               class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white">
-                                <i data-lucide="donate" class="w-4 h-4"></i>
-                                Make a donation
+                               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white">
+                                <i data-lucide="donate" class="w-3.5 h-3.5"></i>
+                                Donate
                             </a>
 
                             <a href="/stake"
-                               class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white">
-                                <i data-lucide="layers" class="w-4 h-4"></i>
-                                Stake NUTRI
+                               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white">
+                                <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                                Stake
                             </a>
 
-                            <button
-                              id="connectWalletBtn"
-                              class="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-sm font-semibold text-gray-900 flex">
-                                <i data-lucide="plug-zap" class="w-4 h-4"></i>
-                                Connect a Hedera wallet
-                            </button>
+                            <a href="/wallet/"
+                               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-orange-600 hover:bg-orange-500 text-xs font-semibold text-white">
+                                <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
+                                Mon Wallet
+                            </a>
 
-                            <button
-                              id="wcConnectBtn"
-                              class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-sm font-semibold text-gray-900 flex">
-                                <i data-lucide="wallet" class="w-4 h-4"></i>
-                                Connect Wallet (WalletConnect)
-                            </button>
+                            <div class="ml-auto flex gap-2 items-center">
+                                <button
+                                  id="wcConnectBtn"
+                                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-600 bg-slate-900/70 hover:bg-slate-800 text-xs font-medium text-slate-100"
+                                  onclick="window.open('https://www.nutrichain.org/wallet/', 'nutriWallet', 'width=420,height=700,noopener')"
+                                >
+                                    <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
+                                    Connect wallet
+                                </button>
 
-                            <button
-                              id="openNutriWalletBtn"
-                              class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-sm font-semibold text-gray-900 flex"
-                              onclick=window.open('https://wallet.nutrichain.org/', '_blank', 'noopener')
-                            >
-                                <i data-lucide="external-link" class="w-4 h-4"></i>
-                                Open NutriChain wallet
-                            </button>
+                                <button
+                                  id="openNutriWalletBtn"
+                                  class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-700 bg-slate-950/70 hover:bg-slate-900 text-[11px] font-medium text-slate-300"
+                                  onclick="window.open('https://wallet.nutrichain.org/', '_blank', 'noopener')"
+                                >
+                                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                                    Open app
+                                </button>
+                            </div>
                         </div>
 
                         <!-- MAIN STATS -->
@@ -237,6 +242,7 @@
                             </div>
                         </div>
 
+                        <!-- GOVERNANCE + WALLET BLOCKS -->
                         <div class="stats-grid" style="margin-top: 1rem;">
                             <div class="stat-card">
                                 <h3 class="text-slate-400 text-sm">Your voting NUTRI</h3>
@@ -267,6 +273,36 @@
                                     Real-time loading may be disabled in dev.
                                 </p>
                             </div>
+
+                            <!-- Simple accountId → balance -->
+                            <div class="stat-card">
+                                <h3 class="text-slate-400 text-sm mb-1">Your NCHAIN wallet</h3>
+                                <label for="accountIdInput" class="text-xs text-slate-500">
+                                    Hedera account ID (e.g. 0.0.123456)
+                                </label>
+                                <div class="mt-1 flex gap-2">
+                                    <input
+                                      id="accountIdInput"
+                                      type="text"
+                                      class="flex-1 rounded-md bg-slate-900 border border-slate-700 px-2 py-1 text-xs text-slate-100 placeholder-slate-500"
+                                      placeholder="0.0.xxxxx"
+                                    />
+                                    <button
+                                      id="loadBalanceBtn"
+                                      class="px-2.5 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-[11px] font-medium text-white">
+                                      Load
+                                    </button>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-2" id="balanceResult">
+                                    Enter your account ID to view your NCHAIN balance.
+                                </p>
+                                <p class="text-[11px] text-slate-500 mt-1">
+                                  After loading your wallet, you can
+                                  <a id="governanceLink" href="/governance" class="text-emerald-400 underline">vote with this account</a>
+                                  or
+                                  <a id="donateLink" href="/donate" class="text-emerald-400 underline">donate with this account</a>.
+                                </p>
+                            </div>
                         </div>
 
                         <!-- RECENT BLOCKS & REGIONAL TOTALS -->
@@ -277,6 +313,7 @@
                                 <p class="text-xs text-slate-500 mb-2">
                                     Overview of the latest blocks on NutriChain.
                                 </p>
+
                                 <div class="overflow-x-auto">
                                     <table class="min-w-full text-xs text-slate-300 border border-slate-800 rounded-lg">
                                         <thead class="bg-slate-900 text-slate-400">
@@ -348,20 +385,24 @@
                         </div>
                     </section>
 
-                    <!-- CHAIN SECTION -->
+                    <!-- CHAIN SECTION (info interne) -->
                     <section id="chainSection" class="section mt-10">
                         <h2 class="text-xl font-semibold mb-4 text-white">NCHAIN chain / blockchain</h2>
                         <p class="text-sm text-slate-400 mb-3">
-                            Details about the NCHAIN token, treasury account, and read‑only access via Mirror Node.
+                            Details about the NCHAIN token, treasury account, and read-only access via Mirror Node.
                         </p>
                         <ul class="list-disc list-inside text-sm text-slate-300 space-y-1">
                             <li>NCHAIN token ID: 0.0.10136204</li>
                             <li>Tracked treasury account: 0.0.10128148</li>
-                            <li>Balances read via Mirror Node (read‑only)</li>
+                            <li>Balances read via Mirror Node (read-only)</li>
                         </ul>
+                        <p class="text-sm text-slate-400 mt-3">
+                          Linked wallet:
+                          <span id="linkedWalletSpan">unknown</span>
+                        </p>
                     </section>
 
-                    <!-- MAP SECTION -->
+                    <!-- MAP SECTION (copie interne) -->
                     <section id="mapSection" class="section mt-10">
                         <h2 class="text-xl font-semibold mb-4 text-white">Donations & canteens map</h2>
                         <p class="text-sm text-slate-400 mb-3">
@@ -395,33 +436,53 @@
             </div>
 
             <!-- FOOTER -->
-            <footer class="mt-12 pt-8 border-t border-[#30363d] text-center text-sm text-gray-400">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <h4 class="text-white font-semibold mb-3">About</h4>
-                        <p class="text-gray-400">
-                            NutriChain links NCHAIN token transparency to real meals impact,
-                            with decentralized and verifiable governance.
-                        </p>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-3">Resources</h4>
-                        <ul class="text-gray-400 space-y-1">
-                            <li>Technical documentation</li>
-                            <li>Hedera explorer</li>
-                            <li>Governance interface</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="text-white font-semibold mb-3">Contact</h4>
-                        <p class="text-gray-400 text-sm flex items-center justify-center">
-                            <i data-lucide="mail" class="w-4 h-4 mr-2"></i>contact@nutrichain.org
-                        </p>
-                    </div>
+            <footer class="mt-16 border-t border-slate-800 bg-slate-950/80">
+              <div class="mx-auto max-w-6xl px-4 py-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div class="text-xs text-slate-400">
+                  <p class="font-semibold text-slate-200">NutriChain</p>
+                  <p class="mt-1">
+                    Transparent humanitarian treasury on Hedera.
+                  </p>
+                  <p class="mt-1">
+                    © 2025 NutriChain. All rights reserved.
+                  </p>
                 </div>
-                <div class="border-t border-[#30363d] pt-6">
-                    <p>© 2025 NutriChain. Open Source MIT License.</p>
+
+                <div class="flex items-center gap-5">
+                  <!-- X -->
+                  <a href="https://x.com/nutrichain_"
+                     target="_blank" rel="noopener noreferrer"
+                     class="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-slate-100 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                         class="h-5 w-5 fill-current">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.003-6.545-5.732-6.545H2.127l7.73-8.828L1.676 2.25h6.59l4.546 5.953 5.432-5.953z"/>
+                    </svg>
+                    <span>X</span>
+                  </a>
+
+                  <!-- Discord -->
+                  <a href="https://discord.gg/4Pm3CkZmXC"
+                     target="_blank" rel="noopener noreferrer"
+                     class="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-slate-100 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.14 96.36"
+                         class="h-5 w-5 fill-current">
+                      <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,48,6.83,72.37,72.37,0,0,0,44.64,0,105.89,105.89,0,0,0,18.39,8.09C2.68,31.65-1.62,54.6.54,77.24A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25,68.42,68.42,0,0,1,27.06,79.2c1.17-.84,2.31-1.7,3.41-2.59A70.38,70.38,0,0,0,50,84.41a70.53,70.53,0,0,0,19.57-7.8c1.11.9,2.25,1.76,3.42,2.59A68.23,68.23,0,0,1,60,85.28a77.25,77.25,0,0,0,6.89,11.11A105.25,105.25,0,0,0,99,77.24C101.46,51.63,95.14,29,107.7,8.07ZM42.52,65.69C36.73,65.69,32,60.38,32,54s4.59-11.74,10.48-11.74S53,47.6,53,54,48.31,65.69,42.52,65.69Zm42.1,0C78.83,65.69,74.1,60.38,74.1,54s4.58-11.74,10.47-11.74S95,47.6,95,54,90.35,65.69,84.62,65.69Z"/>
+                    </svg>
+                    <span>Discord</span>
+                  </a>
+
+                  <!-- Telegram -->
+                  <a href="https://t.me/NutriChainTeam"
+                     target="_blank" rel="noopener noreferrer"
+                     class="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-slate-100 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"
+                         class="h-5 w-5 fill-current">
+                      <path d="M120,0C53.73,0,0,53.73,0,120s53.73,120,120,120,120-53.73,120-120S186.27,0,120,0Zm58.42,82.27-18.9,89.2c-1.43,6.36-5.2,7.93-10.54,4.94l-29.1-21.45-14,13.49a7.35,7.35,0,0,1-5.88,2.87l2.1-29.82,54.27-49a2.47,2.47,0,0,0-3.05-3.9L84.63,130.07,55.7,121c-6.3-2-6.44-6.3,1.31-9.34l113.8-43.86C176.91,65.84,180.76,69.08,178.42,82.27Z"/>
+                    </svg>
+                    <span>@NutriChainTeam</span>
+                  </a>
                 </div>
+              </div>
             </footer>
         </div>
     </div>
@@ -429,262 +490,215 @@
 
 <!-- Leaflet JS -->
 <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin="">
-</script>
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
 
 <script>
-    let map;
-    let fullscreenMap;
+  let currentAccountId = null;
+  let map;
+  let fullscreenMap;
 
-    async function loadNchainBalance(defaultAccount = "0.0.10128148") {
-        try {
-            const res = await fetch(`/nchain_balance/${defaultAccount}`);
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const data = await res.json();
-            const el = document.getElementById('nchain-balance');
-            if (el) {
-                el.textContent = `${data.balance.toLocaleString('en-US')} ${data.symbol}`;
-            }
-            const impactEl = document.getElementById('impactMeals');
-            if (impactEl) {
-                impactEl.textContent = data.balance.toLocaleString('en-US');
-            }
-        } catch (e) {
-            const el = document.getElementById('nchain-balance');
-            if (el) el.textContent = 'Loading error';
-            console.error('Error loading NCHAIN balance', e);
-        }
+  window.onWalletConnected = function (accountId) {
+    const input = document.getElementById("accountIdInput");
+    if (input) {
+      input.value = accountId;
     }
-
-    const locations = [
-        {lat: 48.8566, lng: 2.3522, name: 'Paris, France', meals: 127, org: 'Restos du Cœur'},
-        {lat: 33.5138, lng: 36.2765, name: 'Damascus, Syria', meals: 50, org: 'Cantine Al-Amal'},
-        {lat: 9.0320, lng: 38.7469, name: 'Addis Ababa, Ethiopia', meals: 89, org: 'WFP programme'},
-        {lat: 28.6139, lng: 77.2090, name: 'New Delhi, India', meals: 234, org: 'Akshaya Patra'},
-        {lat: -23.5505, lng: -46.6333, name: 'São Paulo, Brazil', meals: 156, org: 'Banco de Alimentos'},
-        {lat: 36.8065, lng: 10.1815, name: 'Tunis, Tunisia', meals: 78, org: 'Red Crescent'},
-        {lat: 31.7917, lng: 35.2167, name: 'Jerusalem', meals: 42, org: 'Leket Israel'},
-        {lat: -4.0435, lng: 39.6682, name: 'Mombasa, Kenya', meals: 91, org: 'Food4Education'},
-        {lat: 23.8103, lng: 90.4125, name: 'Dhaka, Bangladesh', meals: 203, org: 'BRAC'},
-        {lat: 13.0827, lng: 80.2707, name: 'Chennai, India', meals: 167, org: 'Amma Canteen'},
-        {lat: 6.5244, lng: 3.3792, name: 'Lagos, Nigeria', meals: 112, org: 'Food Bank Nigeria'},
-        {lat: 33.8869, lng: 35.5131, name: 'Beirut, Lebanon', meals: 65, org: 'Islamic Relief'}
-    ];
-
-    function initMap() {
-        map = L.map('map').setView([20, 0], 2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-
-        locations.forEach(loc => {
-            const marker = L.marker([loc.lat, loc.lng]).addTo(map);
-            marker.bindPopup(`
-                <div style="color: #e5e7eb;">
-                    <strong>${loc.name}</strong><br>
-                    <span style="color: #10b981;">🍽️ ${loc.meals} meals distributed</span><br>
-                    <small>${loc.org}</small>
-                </div>
-            `);
-        });
+    const btn = document.getElementById("loadBalanceBtn");
+    if (btn) {
+      btn.click();
     }
+  };
 
-    function setupMapFullscreen() {
-        const btn = document.getElementById('mapFullscreenBtn');
-        const overlay = document.getElementById('mapOverlay');
-        const closeBtn = document.getElementById('mapOverlayClose');
-
-        if (!btn || !overlay || !closeBtn) return;
-
-        btn.addEventListener('click', () => {
-            overlay.classList.remove('hidden');
-
-            if (!fullscreenMap) {
-                fullscreenMap = L.map('mapFullscreen').setView([20, 0], 2);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(fullscreenMap);
-
-                locations.forEach(loc => {
-                    const marker = L.marker([loc.lat, loc.lng]).addTo(fullscreenMap);
-                    marker.bindPopup(`
-                        <div style="color: #e5e7eb;">
-                            <strong>${loc.name}</strong><br>
-                            <span style="color: #10b981;">🍽️ ${loc.meals} meals distributed</span><br>
-                            <small>${loc.org}</small>
-                        </div>
-                    `);
-                });
-            }
-
-            setTimeout(() => {
-                fullscreenMap.invalidateSize();
-            }, 200);
-        });
-
-        closeBtn.addEventListener('click', () => {
-            overlay.classList.add('hidden');
-        });
+  async function loadNchainBalance(defaultAccount = "0.0.10128148") {
+    try {
+      const res = await fetch(`/nchain_balance/${defaultAccount}`);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      const el = document.getElementById("nchain-balance");
+      if (el) {
+        const bal = data.balance ?? 0;
+        const symbol = data.symbol || "NCHAIN";
+        el.textContent = `${bal.toLocaleString("en-US")} ${symbol}`;
+      }
+      const impactEl = document.getElementById("impactMeals");
+      if (impactEl) {
+        const bal = data.balance ?? 0;
+        impactEl.textContent = bal.toLocaleString("en-US");
+      }
+    } catch (e) {
+      const el = document.getElementById("nchain-balance");
+      if (el) el.textContent = "Loading error";
+      console.error("Error loading NCHAIN balance", e);
     }
+  }
 
-    function setupWalletPrompt() {
-        const btn = document.getElementById('connectWalletBtn');
-        if (!btn) return;
+  const locations = [
+    {lat: 48.8566, lng: 2.3522, name: "Paris, France", meals: 127, org: "Restos du Cœur"},
+    {lat: 33.5138, lng: 36.2765, name: "Damascus, Syria", meals: 50, org: "Cantine Al-Amal"},
+    {lat: 9.0320, lng: 38.7469, name: "Addis Ababa, Ethiopia", meals: 89, org: "WFP programme"},
+    {lat: 28.6139, lng: 77.2090, name: "New Delhi, India", meals: 234, org: "Akshaya Patra"},
+    {lat: -23.5505, lng: -46.6333, name: "São Paulo, Brazil", meals: 156, org: "Banco de Alimentos"},
+    {lat: 36.8065, lng: 10.1815, name: "Tunis, Tunisia", meals: 78, org: "Red Crescent"},
+    {lat: 31.7917, lng: 35.2167, name: "Jerusalem", meals: 42, org: "Leket Israel"},
+    {lat: -4.0435, lng: 39.6682, name: "Mombasa, Kenya", meals: 91, org: "Food4Education"},
+    {lat: 23.8103, lng: 90.4125, name: "Dhaka, Bangladesh", meals: 203, org: "BRAC"},
+    {lat: 13.0827, lng: 80.2707, name: "Chennai, India", meals: 167, org: "Amma Canteen"},
+    {lat: 6.5244, lng: 3.3792, name: "Lagos, Nigeria", meals: 112, org: "Food Bank Nigeria"},
+    {lat: 33.8869, lng: 35.5131, name: "Beirut, Lebanon", meals: 65, org: "Islamic Relief"}
+  ];
 
-        btn.addEventListener('click', async () => {
-            const current = document.getElementById('userAddress')?.textContent || '';
-            const accountId = prompt(
-                "Enter your Hedera account (e.g. 0.0.123456)",
-                current && current !== "Not connected" ? current : ""
-            );
-            if (!accountId) return;
+  function initMap() {
+    map = L.map("map").setView([20, 0], 2);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(map);
 
-            const addrEl = document.getElementById('userAddress');
-            if (addrEl) {
-                addrEl.textContent = accountId;
-            }
-
-            await loadNchainBalance(accountId);
-        });
-    }
-
-    function setupWalletConnectPlaceholder() {
-        const btn = document.getElementById('wcConnectBtn');
-        if (!btn) return;
-
-        btn.addEventListener('click', () => {
-            alert("Later: open the WalletConnect multi-wallet selector (MetaMask, HashPack, Blade, etc.).");
-        });
-    }
-
-    async function loadLinkedWallet(accountId) {
-        const span = document.getElementById("linkedWalletSpan");
-        if (!span) return;
-
-        const res = await fetch(`/linked_wallet/${accountId}`);
-        const data = await res.json();
-
-        if (!res.ok) {
-            span.textContent = "No wallet linked";
-            return;
-        }
-
-        span.textContent = `${data.account} → ${data.evm_address}`;
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        loadNchainBalance();
-        initMap();
-        setupWalletPrompt();
-        setupWalletConnectPlaceholder();
-        setupMapFullscreen();
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-
-        // test call with a known accountId
-        loadLinkedWallet("0.0.7314686");
+    locations.forEach((loc) => {
+      const marker = L.marker([loc.lat, loc.lng]).addTo(map);
+      marker.bindPopup(`
+        <div style="color: #e5e7eb;">
+          <strong>${loc.name}</strong><br>
+          <span style="color: #10b981;">🍽️ ${loc.meals} meals distributed</span><br>
+          <small>${loc.org}</small>
+        </div>
+      `);
     });
-</script>
+  }
 
-<p class="text-sm text-slate-400">
-  Linked wallet:
-  <span id="linkedWalletSpan">unknown</span>
-</p>
+  function setupMapFullscreen() {
+    const btn = document.getElementById("mapFullscreenBtn");
+    const overlay = document.getElementById("mapOverlay");
+    const closeBtn = document.getElementById("mapOverlayClose");
 
-<script>
-    // Treasury account ID injected by Flask
+    if (!btn || !overlay || !closeBtn) return;
+
+    btn.addEventListener("click", () => {
+      overlay.classList.remove("hidden");
+
+      if (!fullscreenMap) {
+        fullscreenMap = L.map("mapFullscreen").setView([20, 0], 2);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap"
+        }).addTo(fullscreenMap);
+
+        locations.forEach((loc) => {
+          const marker = L.marker([loc.lat, loc.lng]).addTo(fullscreenMap);
+          marker.bindPopup(`
+            <div style="color: #e5e7eb;">
+              <strong>${loc.name}</strong><br>
+              <span style="color: #10b981;">🍽️ ${loc.meals} meals distributed</span><br>
+              <small>${loc.org}</small>
+            </div>
+          `);
+        });
+      }
+
+      setTimeout(() => {
+        fullscreenMap.invalidateSize();
+      }, 200);
+    });
+
+    closeBtn.addEventListener("click", () => {
+      overlay.classList.add("hidden");
+    });
+  }
+
+  function setupSimpleWalletBalance() {
+    const input = document.getElementById("accountIdInput");
+    const btn   = document.getElementById("loadBalanceBtn");
+    const out   = document.getElementById("balanceResult");
+
+    if (!input || !btn || !out) return;
+
+    btn.addEventListener("click", () => {
+      const accountId = input.value.trim();
+      if (!accountId) {
+        out.textContent = "Please enter a Hedera account ID.";
+        currentAccountId = null;
+        return;
+      }
+
+      out.textContent = "Loading...";
+      fetch(`/nchain_balance/${accountId}`)
+        .then((res) => {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        })
+        .then((data) => {
+          const bal = data.balance ?? 0;
+          const symbol = data.symbol || "NCHAIN";
+          out.textContent = `Balance for ${accountId}: ${bal.toLocaleString("en-US")} ${symbol}`;
+
+          currentAccountId = data.account_id || accountId;
+
+          const votingPowerEl = document.getElementById("voting-power");
+          if (votingPowerEl) {
+            votingPowerEl.textContent = bal.toLocaleString("en-US");
+          }
+
+          const govLink = document.getElementById("governanceLink");
+          const donateLink = document.getElementById("donateLink");
+          if (currentAccountId) {
+            if (govLink) {
+              govLink.href = `/governance?account=${encodeURIComponent(currentAccountId)}`;
+            }
+            if (donateLink) {
+              donateLink.href = `/donate?account=${encodeURIComponent(currentAccountId)}`;
+            }
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          out.textContent = "Error loading balance. Check the account ID.";
+          currentAccountId = null;
+        });
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadNchainBalance();
+    initMap();
+    setupMapFullscreen();
+    setupSimpleWalletBalance();
+
+    if (typeof lucide !== "undefined") {
+      lucide.createIcons();
+    }
+
     const treasuryId = "{{ treasury_id }}";
 
-    // Get NCHAIN balance of the treasury
     fetch(`/nchain_balance/${treasuryId}`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`nchain_balance error: ${response.status}`);
-        }
-        return response.json();
-      })
+      .then((response) => response.ok ? response.json() : null)
       .then((data) => {
-        console.log("Treasury NCHAIN balance:", data);
-        // document.getElementById("treasury-balance").textContent = data.balance ?? "—";
+        if (data) console.log("Treasury NCHAIN balance:", data);
       })
-      .catch((err) => {
-        console.error(err);
-      });
+      .catch((err) => console.error(err));
 
-    // Get a linked wallet (if any) for this account
     fetch(`/linked_wallet/${treasuryId}`)
       .then((response) => {
-        if (response.status === 404) {
-          console.log("No wallet linked for this account");
-          return null;
-        }
-        if (!response.ok) {
-          throw new Error(`linked_wallet error: ${response.status}`);
-        }
-        return response.json();
+        if (response.status === 404) return null;
+        return response.ok ? response.json() : null;
       })
       .then((info) => {
-        if (!info) return;
-        console.log("Linked wallet:", info);
-        // document.getElementById("linked-wallet-address").textContent = info.evm_address;
+        if (info) console.log("Linked wallet:", info);
       })
-      .catch((err) => {
-        console.error(err);
-      });
+      .catch((err) => console.error(err));
+  });
 </script>
 
-<!-- Second Leaflet block (kept minimal, reusing same texts) -->
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module">
+  import { setupWalletConnect, loadTreasuryLinkedWallet } from "{{ url_for('static', filename='js/walletconnect.js') }}";
 
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const map2 = L.map("map").setView([14.6928, -17.4467], 5); // Dakar / West Africa
+  document.addEventListener("DOMContentLoaded", () => {
+    const treasuryId = "{{ treasury_id }}";
+    const wcConnectBtn  = document.getElementById("wcConnectBtn");
+    const linkedLabelEl = document.getElementById("linkedWalletSpan");
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap contributors",
-    }).addTo(map2);
-
-    L.marker([14.6928, -17.4467])
-      .addTo(map2)
-      .bindPopup("NutriChain project - Dakar");
-
-    const overlay = document.getElementById("mapOverlay");
-    const btnFullscreen = document.getElementById("mapFullscreenBtn");
-    const btnClose = document.getElementById("mapOverlayClose");
-    const fullscreenDiv = document.getElementById("mapFullscreen");
-    let fullMap = null;
-
-    btnFullscreen.addEventListener("click", () => {
-      overlay.classList.remove("hidden");
-      fullscreenDiv.innerHTML = "";
-      fullMap = L.map("mapFullscreen").setView(map2.getCenter(), map2.getZoom());
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap contributors",
-      }).addTo(fullMap);
-      L.marker([14.6928, -17.4467])
-        .addTo(fullMap)
-        .bindPopup("NutriChain project - Dakar");
-    });
-
-    btnClose.addEventListener("click", () => {
-      overlay.classList.add("hidden");
-      if (fullMap) {
-        fullMap.remove();
-        fullMap = null;
-      }
-      fullscreenDiv.innerHTML = "";
-    });
+    setupWalletConnect(treasuryId, wcConnectBtn, linkedLabelEl);
+    loadTreasuryLinkedWallet(treasuryId, wcConnectBtn, linkedLabelEl);
   });
 </script>
 </body>
 </html>
-
