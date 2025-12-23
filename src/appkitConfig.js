@@ -1,30 +1,28 @@
 // src/appkitConfig.js
-import { http, createConfig } from "wagmi";
+import { createConfig } from "wagmi";
 import { mainnet } from "wagmi/chains";
-import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
+import { http } from "wagmi";
 import { createAppKit } from "@reown/appkit/react";
 
 const projectId = "c75338eb5c9eb1b462e8a9bd7229afdf";
 
-export const wagmiAdapter = new WagmiAdapter({
-  projectId,
-  networks: [mainnet],
+// Crée la configuration wagmi
+export const wagmiConfig = createConfig({
+  chains: [mainnet],
   transports: {
     [mainnet.id]: http(),
   },
 });
 
-// Important : on utilise wagmiAdapter.wagmiConfig
-export const wagmiConfig = createConfig(wagmiAdapter.wagmiConfig);
-
+// Crée AppKit avec la configuration wagmi
 export const appKit = createAppKit({
-  adapters: [wagmiAdapter],
+  config: wagmiConfig,
   projectId,
   networks: [mainnet],
   metadata: {
     name: "NutriChain",
     description: "NutriChain dApp",
-    url: "https://nutrichain.local",
+    url: "http://app.nutrichain.com",,
     icons: ["https://avatars.githubusercontent.com/u/37784886"],
   },
 });

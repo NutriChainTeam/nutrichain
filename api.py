@@ -5,29 +5,16 @@ from flask_cors import CORS
 from datetime import datetime
 import json
 
-# from hedera import PrivateKey
-
-# Pour obtenir la clé publique à partir de la clé privée
-# prikey = PrivateKey.generate()
-# pubkey = prikey.getPublicKey()
-
-# Pour vérifier une signature, utilisez la méthode de la clé publique
-# signature = prikey.sign(b"message")
-# is_valid = pubkey.verify(b"message", signature)
-
 # ================= FIRESTORE =================
 import firebase_admin
 from firebase_admin import credentials, firestore
 
 SERVICE_ACCOUNT_FILE = os.environ.get("FIREBASE_SERVICE_ACCOUNT", "serviceAccountKey.json")
 
-# On vérifie si l'app est déjà initialisée pour éviter les erreurs lors des reloads
+# Vérifier si l'app Firebase est déjà initialisée
 if not firebase_admin._apps:
     firebase_cred = credentials.Certificate(SERVICE_ACCOUNT_FILE)
-    firebase_app = firebase_admin.initialize_app(firebase_cred)
-else:
-    firebase_app = firebase_admin.get_app()
-
+    firebase_admin.initialize_app(firebase_cred)
 db = firestore.client()
 # ============================================
 
@@ -41,28 +28,27 @@ try:
         TokenId,
         TransferTransaction
     )
-    from hedera.crypto import PublicKey, Signature
 except Exception as e:
     hedera_available = False
-    print("Hedera SDK not available on this runtime:", e)
+    print("Hedera SDK non disponible sur ce runtime :", e)
 # =============================================
 
 app = Flask(__name__)
 CORS(app)
 
-# --- Hedera / Mirror constants ---
+# --- Constantes Hedera / Mirror ---
 MIRROR_BASE = "https://mainnet-public.mirrornode.hedera.com"
 NCHAIN_TOKEN_ID_STR = "0.0.10136204"
-
 HEDERA_NETWORK = os.environ.get("HEDERA_NETWORK", "testnet")
 OPERATOR_ID_STR = os.environ.get("OPERATOR_ID")
 OPERATOR_KEY_STR = os.environ.get("OPERATOR_KEY")
 # ---------------------------------
 
+# --- Données en mémoire ---
 proposals_db = []
 votes_db = []
 
-# ========== DONATIONS MAP ==========
+# --- Carte des dons par région ---
 donations_by_region = {
     "afrique_ouest": 0,
     "afrique_est": 0,
@@ -72,13 +58,11 @@ donations_by_region = {
     "afrique_nord": 0,
     "Dakar": 0,
 }
-# ===================================
 
-# ========== STAKING DATA ==========
+# --- APY pour le staking ---
 APY = 0.10
-# ==================================
 
-# ========== PROPOSALS DUMMY DATA ==========
+# --- Données fictives de propositions ---
 proposals = [
     {
         "id": 1,
@@ -89,17 +73,11 @@ proposals = [
         "status": "open",
     }
 ]
-# ==========================================
 
-# ========== HEDERA CONFIG ==========
+# --- Configuration Hedera ---
 if hedera_available:
     NCHAIN_TOKEN_ID = TokenId.fromString(NCHAIN_TOKEN_ID_STR)
-
-    if HEDERA_NETWORK == "testnet":
-        hedera_client = Client.forTestnet()
-    else:
-        hedera_client = Client.forMainnet()
-
+    hedera_client = Client.forTestnet() if HEDERA_NETWORK == "testnet" else Client.forMainnet()
     if OPERATOR_ID_STR and OPERATOR_KEY_STR:
         OPERATOR_ID = AccountId.fromString(OPERATOR_ID_STR)
         OPERATOR_KEY = PrivateKey.fromString(OPERATOR_KEY_STR)
@@ -107,7 +85,7 @@ if hedera_available:
     else:
         OPERATOR_ID = None
         OPERATOR_KEY = None
-        print("Warning: OPERATOR_ID / OPERATOR_KEY not set, send_nchain will be simulated.")
+        print("Attention : OPERATOR_ID / OPERATOR_KEY non défini, envoi simulé.")
 else:
     NCHAIN_TOKEN_ID = None
     hedera_client = None
@@ -115,11 +93,8 @@ else:
     OPERATOR_KEY = None
 # ===================================
 
-
+# --- Fonctions utilitaires ---
 def get_nchain_balance(account_id: str) -> float:
-    """
-    Lit le solde NCHAIN via le Mirror Node en utilisant l'ID de token chaîne.
-    """
     url = f"{MIRROR_BASE}/api/v1/tokens/{NCHAIN_TOKEN_ID_STR}/balances"
     params = {"account.id": account_id}
     r = requests.get(url, params=params, timeout=10)
@@ -128,39 +103,27 @@ def get_nchain_balance(account_id: str) -> float:
     balances = data.get("balances", [])
     if not balances:
         return 0.0
-
     raw = balances[0].get("balance", 0)
     return raw / 1_000_000.0
 
-
 def send_nchain(to_account: str, amount_tokens: float) -> str:
-    """
-    Envoie amount_tokens NCHAIN vers to_account. Si SDK ou opérateur indisponible,
-    renvoie un statut simulé.
-    """
     if not hedera_available or NCHAIN_TOKEN_ID is None or hedera_client is None:
         return "SIMULATED_NO_SDK"
-
     if not OPERATOR_ID or not OPERATOR_KEY:
         return "SIMULATED_NO_OPERATOR"
-
     tokens_smallest = int(amount_tokens * 1_000_000)
-
     tx = (
         TransferTransaction()
         .addTokenTransfer(NCHAIN_TOKEN_ID, OPERATOR_ID, -tokens_smallest)
         .addTokenTransfer(NCHAIN_TOKEN_ID, AccountId.fromString(to_account), tokens_smallest)
     )
-
     tx.freezeWith(hedera_client)
     tx.sign(OPERATOR_KEY)
     tx_response = tx.execute(hedera_client)
     receipt = tx_response.getReceipt(hedera_client)
     return str(receipt.status)
 
-
 def calculate_rewards(wallet):
-    """Calcule les rewards de staking pour un wallet donné."""
     doc_ref = db.collection("staking").document(wallet)
     doc = doc_ref.get()
     if not doc.exists:
@@ -169,24 +132,18 @@ def calculate_rewards(wallet):
     if "start_time" not in data:
         return 0.0
     now = datetime.utcnow()
-    # Gestion robuste du format de date (isoformat parfois avec ou sans timezone)
     try:
         start = datetime.fromisoformat(data["start_time"])
     except ValueError:
-        # Fallback si format different
         return 0.0
-        
     duration = (now - start).total_seconds()
-    # Si la date est dans le futur (timezone diff), duration peut être négatif
-    if duration < 0: duration = 0
-    
+    if duration < 0:
+        duration = 0
     yearly_seconds = 365 * 24 * 3600
     reward = data["amount"] * APY * (duration / yearly_seconds)
     return reward
 
-
 def get_staking_info(wallet):
-    """Lit l'état du staking depuis Firestore."""
     doc_ref = db.collection("staking").document(wallet)
     doc = doc_ref.get()
     if not doc.exists:
@@ -201,25 +158,17 @@ def get_staking_info(wallet):
         "apy": APY
     }
 
-
-# ========== PROPOSALS & VOTES (RAM) ==========
+# --- Routes ---
 @app.route("/proposals", methods=["GET", "POST"])
 def proposals_route():
-    """
-    GET : renvoie les propositions en RAM (proposals_db).
-    POST : crée une nouvelle proposition en RAM (simple démo).
-    """
     if request.method == "GET":
         return jsonify({"proposals": proposals_db})
-
     data = request.get_json() or {}
     title = data.get("title")
     region = data.get("region") or "N/A"
     meals_target = data.get("meals_target") or 0
-
     if not title:
-        return jsonify({"message": "Title is required"}), 400
-
+        return jsonify({"message": "Titre requis"}), 400
     new_id = (proposals_db[-1]["id"] + 1) if proposals_db else 1
     proposal = {
         "id": new_id,
@@ -230,50 +179,40 @@ def proposals_route():
         "status": "open",
     }
     proposals_db.append(proposal)
-    return jsonify({"message": "Proposal created.", "proposal": proposal}), 201
-
+    return jsonify({"message": "Proposition créée.", "proposal": proposal}), 201
 
 @app.route("/vote/<int:proposal_id>", methods=["POST"])
 def vote(proposal_id):
     data = request.get_json() or {}
     choice = data.get("choice")
     wallet = data.get("wallet")
-
     if choice not in ("yes", "no", "abstain"):
-        return jsonify({"message": "Invalid choice."}), 400
-
+        return jsonify({"message": "Choix invalide."}), 400
     if not wallet:
-        return jsonify({"message": "Wallet (accountId) is required."}), 400
-
+        return jsonify({"message": "Wallet requis."}), 400
     try:
         weight = get_nchain_balance(wallet)
     except Exception as e:
-        return jsonify({"message": "Mirror node error", "details": str(e)}), 502
-
+        return jsonify({"message": "Erreur Mirror node", "details": str(e)}), 502
     vote_record = {
         "proposal_id": proposal_id,
         "wallet": wallet,
         "choice": choice,
         "weight": weight,
-        "timestamp": datetime.utcnow().isoformat() # Ajout pour l'activity feed
+        "timestamp": datetime.utcnow().isoformat()
     }
     votes_db.append(vote_record)
-    
-    # Enregistrement optionnel dans Firestore pour persistance et activity feed
     try:
         db.collection('votes').add(vote_record)
     except Exception as e:
-        print(f"Warning: could not save vote to firestore: {e}")
-
-    return jsonify({"message": f"Vote '{choice}' recorded.", "weight": weight}), 200
-
+        print(f"Attention : impossible de sauvegarder le vote dans Firestore : {e}")
+    return jsonify({"message": f"Vote '{choice}' enregistré.", "weight": weight}), 200
 
 @app.route("/proposals/<int:proposal_id>/results", methods=["GET"])
 def proposal_results(proposal_id):
     yes_weight = 0.0
     no_weight = 0.0
     abstain_weight = 0.0
-
     for v in votes_db:
         if v["proposal_id"] != proposal_id:
             continue
@@ -283,7 +222,6 @@ def proposal_results(proposal_id):
             no_weight += v["weight"]
         elif v["choice"] == "abstain":
             abstain_weight += v["weight"]
-
     return jsonify(
         {
             "proposal_id": proposal_id,
@@ -294,27 +232,19 @@ def proposal_results(proposal_id):
             },
         }
     )
-# ============================================
 
-
-# ========== STAKING ROUTES ==========
+# --- Routes pour le staking ---
 @app.route("/api/stake", methods=["POST"])
 def stake():
-    """Permet à un utilisateur de staker des tokens NCHAIN."""
-    data = request.get_json()
+    data = request.get_json() or {}
     wallet = data.get("wallet")
     amount = float(data.get("amount", 0))
-
     if not wallet or amount <= 0:
         return jsonify({"error": "wallet ou amount invalide"}), 400
-
-    # Vérifier si le wallet est déjà en staking
     doc_ref = db.collection("staking").document(wallet)
     doc = doc_ref.get()
     if doc.exists:
-        return jsonify({"error": "Already staking, unstake first"}), 400
-
-    # Enregistrer le staking dans Firestore
+        return jsonify({"error": "Déjà en staking, déstakez d'abord"}), 400
     timestamp = datetime.utcnow().isoformat()
     doc_ref.set({
         "wallet": wallet,
@@ -322,9 +252,6 @@ def stake():
         "start_time": timestamp,
         "apy": APY
     })
-    
-    # Ajout dans une collection historique pour le feed d'activité
-    # (optionnel si tu ne veux afficher que les états actuels, mais mieux pour le feed)
     try:
         db.collection('staking_history').add({
             "wallet": wallet,
@@ -333,39 +260,27 @@ def stake():
             "timestamp": timestamp
         })
     except Exception as e:
-        print(f"Warning: could not save staking history: {e}")
-
-    return jsonify({"message": "Stake successful", "amount": amount}), 200
-
+        print(f"Attention : impossible de sauvegarder l'historique du staking : {e}")
+    return jsonify({"message": "Stake réussi", "amount": amount}), 200
 
 @app.route("/api/unstake", methods=["POST"])
 def unstake():
-    """Permet à un utilisateur de retirer son stake et récupérer ses rewards."""
-    data = request.get_json()
+    data = request.get_json() or {}
     wallet = data.get("wallet")
-
     if not wallet:
-        return jsonify({"error": "Wallet required"}), 400
-
+        return jsonify({"error": "Wallet requis"}), 400
     doc_ref = db.collection("staking").document(wallet)
     doc = doc_ref.get()
     if not doc.exists:
-        return jsonify({"error": "No active stake found"}), 400
-
+        return jsonify({"error": "Aucun staking actif trouvé"}), 400
     data = doc.to_dict()
     staked_amount = data["amount"]
     reward = calculate_rewards(wallet)
-
-    # Supprimer le staking de Firestore
     doc_ref.delete()
-
-    # Sauvegarder les récompenses
     rewards_ref = db.collection("rewards").document(wallet)
     rewards_data = rewards_ref.get()
     current_rewards = rewards_data.to_dict().get("total", 0) if rewards_data.exists else 0
     rewards_ref.set({"total": current_rewards + reward})
-    
-    # Log historique pour activity feed
     try:
         db.collection('staking_history').add({
             "wallet": wallet,
@@ -375,33 +290,23 @@ def unstake():
             "timestamp": datetime.utcnow().isoformat()
         })
     except Exception as e:
-        print(f"Warning: could not save unstake history: {e}")
-
+        print(f"Attention : impossible de sauvegarder l'historique du déstake : {e}")
     return jsonify({
-        "message": "Unstake successful",
+        "message": "Déstake réussi",
         "staked_amount": staked_amount,
         "reward": reward,
         "total_rewards": current_rewards + reward
     }), 200
 
-
 @app.route("/api/staking_info/<wallet>", methods=["GET"])
 def staking_info(wallet):
-    """Retourne les informations de staking pour un wallet donné."""
     info = get_staking_info(wallet)
     return jsonify(info), 200
-# ====================================
-
 
 @app.route("/api/donate", methods=["POST"])
 def api_donate():
-    """Route générique de don (si utilisée en dehors de /donate form)"""
-    data = request.get_json()
-    # Logique simplifiée, idéalement fusionner avec la route /donate ci-dessous
-    # Pour l'instant on log juste
-    app.logger.info(f"New donation: {data}")
-    
-    # Enregistrement pour activity feed si pas déjà fait par l'autre route
+    data = request.get_json() or {}
+    app.logger.info(f"Nouveau don : {data}")
     if data:
         try:
             record = data.copy()
@@ -410,38 +315,27 @@ def api_donate():
             db.collection('donations').add(record)
         except Exception:
             pass
-            
     return jsonify({"status": "ok"}), 200
 
-
-# =======================================================
-# NOUVEAU : API ACTIVITY FEED
-# =======================================================
+# --- Feed d'activité ---
 @app.route('/api/activity', methods=['GET'])
 def get_activity():
     activities = []
-
     try:
-        # --- 1. Récupérer les dernières DONATIONS ---
-        # On essaie de lire la collection 'donations'
-        # Si elle n'existe pas encore ou est vide, ça ne plantera pas
         try:
             donations_ref = db.collection('donations').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(5)
             for doc in donations_ref.stream():
                 data = doc.to_dict()
-                donor = data.get('donor_label') or data.get('wallet_address') or 'Anonymous'
+                donor = data.get('donor_label') or data.get('wallet_address') or 'Anonyme'
                 activities.append({
                     'type': 'donation',
                     'icon': '❤️',
-                    'message': f"Donation of {data.get('amount', 0)} NUTRI",
+                    'message': f"Don de {data.get('amount', 0)} NUTRI",
                     'user': donor[:10] + '...' if len(donor) > 10 else donor,
                     'timestamp': data.get('timestamp')
                 })
         except Exception as e:
-            print(f"Activity feed - donations error: {e}")
-
-        # --- 2. Récupérer les derniers VOTES ---
-        # On lit la collection 'votes' (peuplée dans la route /vote)
+            print(f"Erreur feed d'activité - dons : {e}")
         try:
             votes_ref = db.collection('votes').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(5)
             for doc in votes_ref.stream():
@@ -449,16 +343,12 @@ def get_activity():
                 activities.append({
                     'type': 'vote',
                     'icon': '🗳️',
-                    'message': f"Voted '{data.get('choice')}' on Prop #{data.get('proposal_id', '?')}",
-                    'user': (data.get('wallet') or 'Anonymous')[:6] + '...',
+                    'message': f"Vote '{data.get('choice')}' sur Prop #{data.get('proposal_id', '?')}",
+                    'user': (data.get('wallet') or 'Anonyme')[:6] + '...',
                     'timestamp': data.get('timestamp')
                 })
         except Exception as e:
-            print(f"Activity feed - votes error: {e}")
-
-        # --- 3. Récupérer les derniers STAKES ---
-        # On utilise 'staking_history' créé plus haut pour avoir l'historique
-        # Sinon on peut lire 'staking' mais on n'aura que l'état actuel
+            print(f"Erreur feed d'activité - votes : {e}")
         try:
             stakes_ref = db.collection('staking_history').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(5)
             for doc in stakes_ref.stream():
@@ -467,15 +357,12 @@ def get_activity():
                 activities.append({
                     'type': 'stake',
                     'icon': '🔒' if action == 'Stake' else '🔓',
-                    'message': f"{action}d {data.get('amount', 0)} NCHAIN",
-                    'user': (data.get('wallet') or 'Anonymous')[:6] + '...',
+                    'message': f"{action} {data.get('amount', 0)} NCHAIN",
+                    'user': (data.get('wallet') or 'Anonyme')[:6] + '...',
                     'timestamp': data.get('timestamp')
                 })
         except Exception as e:
-            print(f"Activity feed - stakes error: {e}")
-
-        # --- 4. Fusionner et Trier ---
-        # Fonction helper pour parser le timestamp peu importe le format (string ou datetime)
+            print(f"Erreur feed d'activité - staking : {e}")
         def parse_ts(item):
             ts = item.get('timestamp')
             if not ts: return datetime.min
@@ -485,107 +372,74 @@ def get_activity():
                 except:
                     return datetime.min
             return ts
-
         activities.sort(key=parse_ts, reverse=True)
-
-        # --- 5. Nettoyage final pour le JSON ---
         final_list = []
         for act in activities[:10]:
             item = act.copy()
-            # On s'assure que timestamp est une string pour le JSON
             if not isinstance(item['timestamp'], str):
                 item['timestamp'] = item['timestamp'].isoformat() if item['timestamp'] else ""
             final_list.append(item)
-
         return jsonify(final_list), 200
-
     except Exception as e:
-        print(f"Error fetching activity: {e}")
-        # On renvoie une liste vide plutôt qu'une erreur 500 pour ne pas casser le front
+        print(f"Erreur lors de la récupération de l'activité : {e}")
         return jsonify([]), 200
 
-# =======================================================
-
-
+# --- Pages HTML ---
 @app.route("/about-governance")
 def about_governance():
     return render_template("about_governance.html")
-
 
 @app.route("/donate_page")
 def donate_page():
     return render_template("donate.html")
 
-
 @app.route("/stake")
 def stake_page():
     return render_template("stake.html")
-
 
 @app.route("/governance")
 def governance_page():
     return render_template("governance.html")
 
-
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"}), 200
-
 
 @app.route("/proposals_list", methods=["GET"])
 def list_proposals():
     return jsonify({"proposals": proposals}), 200
 
-
 @app.route("/donate", methods=["GET"])
 def show_donate_page():
     return render_template("donate.html")
 
-
 @app.route("/donate", methods=["POST"])
 def donate():
     data = request.get_json(force=True)
-
     wallet_address = data.get("wallet_address")
-    donor_label = data.get("donor_label", "Anonymous")
+    donor_label = data.get("donor_label", "Anonyme")
     region = data.get("region")
     amount = data.get("amount")
     hedera_account = data.get("hedera_account")
-
     if not wallet_address:
-        return jsonify({"error": "wallet_address missing"}), 400
-
+        return jsonify({"error": "wallet_address manquant"}), 400
     if region not in donations_by_region:
-        return jsonify({"error": "Unknown region"}), 400
-
+        return jsonify({"error": "Région inconnue"}), 400
     if not isinstance(amount, (int, float)) or amount <= 0:
-        return jsonify({"error": "Invalid amount"}), 400
-
+        return jsonify({"error": "Montant invalide"}), 400
     if not hedera_account:
-        return jsonify(
-            {"error": "Missing Hedera account (hedera_account)"}
-        ), 400
-
+        return jsonify({"error": "Compte Hedera manquant (hedera_account)"}), 400
     meals = int(amount)
     donations_by_region[region] += amount
-
-    target_proposal = next(
-        (p for p in proposals if p["region"] == region), None
-    )
+    target_proposal = next((p for p in proposals if p["region"] == region), None)
     proposal_id = target_proposal["id"] if target_proposal else None
-
     if target_proposal is not None:
         funded = target_proposal.get("meals_funded", 0)
         target_proposal["meals_funded"] = funded + meals
-
     try:
         tx_status = send_nchain(hedera_account, amount)
     except Exception as e:
-        return jsonify(
-            {"error": "NCHAIN transfer failed", "details": str(e)}
-        ), 502
-    
-    # Enregistrement dans Firestore pour l'Activity Feed
+        return jsonify({"error": "Échec du transfert NCHAIN", "details": str(e)}), 502
     timestamp = datetime.utcnow().isoformat()
     try:
         db.collection('donations').add({
@@ -597,11 +451,10 @@ def donate():
             "tx_status": str(tx_status)
         })
     except Exception as e:
-        print(f"Warning: could not save donation to firestore: {e}")
-
+        print(f"Attention : impossible de sauvegarder le don dans Firestore : {e}")
     return jsonify(
         {
-            "message": f"Donation of {amount} NUTRI received for region {region}",
+            "message": f"Don de {amount} NUTRI reçu pour la région {region}",
             "wallet_address": wallet_address,
             "donor_label": donor_label,
             "region": region,
@@ -616,14 +469,12 @@ def donate():
         }
     ), 201
 
-
 @app.route("/nchain_balance/<account_id>")
 def nchain_balance(account_id):
     try:
         balance = get_nchain_balance(account_id)
     except Exception as e:
-        return jsonify({"error": "Mirror node error", "details": str(e)}), 502
-
+        return jsonify({"error": "Erreur Mirror node", "details": str(e)}), 502
     return jsonify(
         {
             "account_id": account_id,
@@ -633,40 +484,28 @@ def nchain_balance(account_id):
         }
     )
 
-
 @app.route("/nchain_balance/aid", methods=["GET"])
 def nchain_balance_aid():
     return nchain_balance("0.0.10168905")
 
-
-# ========== LINKED WALLETS AVEC FIRESTORE ==========
+# --- Gestion des portefeuilles liés ---
 @app.route("/linked_wallet/<account_id>", methods=["GET"])
 def linked_wallet(account_id):
-    """
-    Renvoie le wallet lié pour un compte Hedera donné, depuis Firestore.
-    """
     doc_ref = db.collection("linked_wallets").document(account_id)
     doc = doc_ref.get()
     if not doc.exists:
-        return jsonify({"error": "No wallet linked for this account"}), 404
-
+        return jsonify({"error": "Aucun portefeuille lié pour ce compte"}), 404
     data = doc.to_dict()
     return jsonify(data), 200
 
-
 @app.route("/linked_wallet", methods=["POST"])
 def post_linked_wallet():
-    """
-    Sauvegarde / met à jour un lien wallet dans Firestore.
-    """
     data = request.get_json(silent=True) or {}
     account = data.get("account")
     evm_address = data.get("evm_address")
     wallet_type = data.get("wallet_type", "unknown")
-
     if not account:
-        return jsonify({"error": "Missing 'account'"}), 400
-
+        return jsonify({"error": "Champ 'account' manquant"}), 400
     doc_ref = db.collection("linked_wallets").document(account)
     doc_ref.set(
         {
@@ -676,54 +515,44 @@ def post_linked_wallet():
         },
         merge=True,
     )
-
     return jsonify({"status": "ok"}), 201
-# ===================================================
 
-# ========== HASHPACK CONNECT ==========
+# --- Connexion HashPack ---
 @app.route("/hashpack_connect", methods=["POST"])
 def hashpack_connect():
-    data = request.get_json()
+    data = request.get_json() or {}
     wallet_hedera = data.get("wallet_hedera")
     signature = data.get("signature")
     message = data.get("message", "Je me connecte à NutriChain")
-
     if not wallet_hedera or not signature:
-        return jsonify({"error": "Missing wallet or signature"}), 400
-
+        return jsonify({"error": "Portefeuille ou signature manquant"}), 400
     try:
-        # Enregistrement dans Firestore
         doc_ref = db.collection("linked_wallets").document(wallet_hedera)
         doc_ref.set({
             "account": wallet_hedera,
             "wallet_type": "hashpack",
             "connected_at": datetime.utcnow().isoformat()
         }, merge=True)
-
         return jsonify({"status": "ok", "wallet_type": "hashpack"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ====================================
-
+# --- Accueil ---
 @app.route("/")
 def index():
-    print(">>> Rendering dashboard.html")
+    print(">>> Affichage dashboard.html")
     treasury_id = "0.0.10128148"
     return render_template("dashboard.html", treasury_id=treasury_id)
 
-
+# --- Authentification portefeuille ---
 @app.route("/api/login_wallet", methods=["POST"])
 def login_wallet():
     data = request.get_json() or {}
-    wallet = data.get("wallet")          # adresse EVM (0x...)
-    hedera_account = data.get("hedera")  # optionnel: 0.0.x si tu l’envoies plus tard
-
+    wallet = data.get("wallet")
+    hedera_account = data.get("hedera")
     if not wallet:
-        return jsonify({"error": "No wallet provided"}), 400
-
+        return jsonify({"error": "Aucun portefeuille fourni"}), 400
     try:
-        # On utilise la collection linked_wallets (déjà utilisée ailleurs)
         doc_ref = db.collection("linked_wallets").document(wallet)
         payload = {
             "account": hedera_account or None,
@@ -731,48 +560,32 @@ def login_wallet():
             "wallet_type": "evm",
             "connected_at": datetime.utcnow().isoformat()
         }
-        # merge=True pour ne pas écraser des infos existantes
         doc_ref.set(payload, merge=True)
     except Exception as e:
-        print(f"Firestore error logging login: {e}")
-        return jsonify({"error": "Firestore error"}), 500
-
+        print(f"Erreur Firestore lors de la connexion : {e}")
+        return jsonify({"error": "Erreur Firestore"}), 500
     return jsonify({"status": "ok", "wallet": wallet}), 200
-
 
 @app.route("/api/evm_to_hedera", methods=["GET"])
 def evm_to_hedera():
-    """
-    Retourne le compte Hedera lié à une adresse EVM, à partir de la collection linked_wallets.
-    Query param: ?evm=0x....
-    """
     evm = request.args.get("evm")
     if not evm:
-        return jsonify({"error": "missing evm"}), 400
-
+        return jsonify({"error": "EVM manquant"}), 400
     doc_ref = db.collection("linked_wallets").document(evm)
     doc = doc_ref.get()
     if not doc.exists:
-        return jsonify({"error": "no link found"}), 404
-
+        return jsonify({"error": "Aucun lien trouvé"}), 404
     data = doc.to_dict()
     hedera_account = data.get("account")
     return jsonify({"evm": evm, "hedera": hedera_account}), 200
 
-
 @app.route("/api/link_hedera", methods=["POST"])
 def link_hedera():
-    """
-    Lie une adresse EVM à un compte Hedera (0.0.xxxx) dans linked_wallets.
-    Body JSON: { "evm": "0x...", "hedera": "0.0.xxxx" }
-    """
     data = request.get_json() or {}
     evm = data.get("evm")
     hedera_account = data.get("hedera")
-
     if not evm or not hedera_account:
-        return jsonify({"error": "Missing evm or hedera"}), 400
-
+        return jsonify({"error": "EVM ou Hedera manquant"}), 400
     try:
         doc_ref = db.collection("linked_wallets").document(evm)
         doc_ref.set(
@@ -785,11 +598,19 @@ def link_hedera():
             merge=True,
         )
     except Exception as e:
-        print(f"Firestore error linking hedera: {e}")
-        return jsonify({"error": "Firestore error"}), 500
-
+        print(f"Erreur Firestore lors du lien Hedera : {e}")
+        return jsonify({"error": "Erreur Firestore"}), 500
     return jsonify({"status": "ok", "evm": evm, "hedera": hedera_account}), 200
 
+@app.route("/admin")
+def admin_dashboard():
+    return render_template("admin_dashboard.html")
+
+@app.route("/wallet")
+def wallet():
+    return render_template("wallet.html")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
+

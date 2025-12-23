@@ -1,69 +1,129 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <title>NutriChain - NUTRI Staking</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>NutriChain - Staking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
-  <div class="max-w-xl mx-auto px-4 py-6">
-    <header class="mb-6 flex items-center justify-between gap-3">
-      <div>
-        <h1 class="text-xl font-semibold text-white">NUTRI Staking simulator</h1>
-        <p class="text-[11px] text-slate-400">
-          Estimate the potential yield of your NUTRI staking at a 7.25% indicative APY.
-        </p>
-      </div>
-      <div class="flex flex-col items-end gap-2 text-xs">
-        <a href="/" class="text-sky-400 hover:text-sky-300 flex items-center gap-1">
-          <i data-lucide="arrow-left" class="w-3 h-3"></i> Back to dashboard
-        </a>
-        <div class="flex items-center gap-1">
-          <a
-            href="/donate"
-            class="px-2 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-[11px] font-semibold text-white"
-          >
-            Make a donation
-          </a>
-          <a
-            href="https://www.saucerswap.finance/swap/HBAR/0.0.10136204"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="px-2 py-1 rounded-md bg-sky-600 hover:bg-sky-500 text-[11px] font-semibold text-white"
-          >
-            Buy NCHAIN
-          </a>
+<body class="bg-slate-950 text-slate-200 font-sans antialiased">
+
+  <div class="flex min-h-screen">
+    
+    <!-- SIDEBAR (Desktop) -->
+    <aside class="hidden lg:flex w-64 flex-col fixed inset-y-0 bg-slate-900 border-r border-slate-800 z-40">
+      <div class="p-6 flex items-center gap-3 border-b border-slate-800/50">
+        <!-- LOGO IPFS -->
+        <img src="https://ipfs.io/ipfs/bafkreic4gnxl4l6lv7ycksqffykbpfq6ycvdqzuzzsn6q7wc4q5tzbmbsu" alt="NutriChain Logo" class="h-10 w-10 rounded-full shadow-lg ring-2 ring-emerald-500">
+        <div>
+          <h1 class="font-bold text-xl text-white tracking-tight">NutriChain</h1>
+          <p class="text-xs text-emerald-400 font-medium tracking-wide">DECENTRALIZED AID</p>
         </div>
       </div>
-    </header>
 
-    <p id="stakeWalletInfo" class="text-[11px] text-slate-500 mb-4"></p>
+      <nav class="flex-1 p-4 space-y-1 mt-2">
+        <a href="/" class="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+        </a>
+        <a href="/admin" class="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+          <i data-lucide="check" class="w-5 h-5"></i> Admin
+        </a>
+        <a href="/governance" class="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+          <i data-lucide="vote" class="w-5 h-5"></i> Governance
+        </a>
+        <a href="/stake" class="flex items-center gap-3 px-3 py-2.5 bg-emerald-500/10 text-emerald-400 rounded-lg font-medium transition-colors border border-emerald-500/20">
+          <i data-lucide="layers" class="w-5 h-5"></i> Staking
+        </a>
+        <a href="/donate" class="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+          <i data-lucide="heart" class="w-5 h-5"></i> Donate
+        </a>
+      </nav>
 
-    <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3 text-xs">
-      <div>
-        <label class="block text-slate-400 mb-1">Amount to stake (NUTRI)</label>
-        <input id="stakeAmount" type="number" min="1" step="1"
-               class="w-full px-2 py-1 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-xs"
-               placeholder="e.g. 1000" />
+      <div class="p-4 border-t border-slate-800/50 bg-slate-900/50">
+        <div class="bg-slate-800/80 rounded-lg p-3 border border-slate-700/50">
+          <p class="text-xs text-slate-400 mb-1">System Status</p>
+          <div class="flex items-center gap-2">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="text-xs font-medium text-emerald-400">Mainnet Active</span>
+          </div>
+        </div>
       </div>
-      <div>
-        <label class="block text-slate-400 mb-1">Duration (in years)</label>
-        <input id="stakeYears" type="number" min="0.1" step="0.1" value="1"
-               class="w-full px-2 py-1 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-xs"
-               placeholder="e.g. 1" />
-      </div>
-      <button id="simulateStake"
-              class="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white flex items-center gap-1">
-        <i data-lucide="calculator" class="w-3 h-3"></i>
-        Simulate yield
-      </button>
+    </aside>
 
-      <div id="stakeResult" class="text-[11px] text-slate-400 mt-1"></div>
-    </div>
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8 bg-slate-950">
+      
+      <!-- Top Bar -->
+      <div class="hidden lg:flex justify-between items-center mb-8">
+        <div>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Staking Simulator</h2>
+          <p class="text-slate-400 text-sm mt-1">Estimate your potential returns with a 7.25% APY.</p>
+        </div>
+        <div class="flex items-center gap-4">
+           <a href="/donate" class="px-4 py-2 text-sm font-medium text-emerald-400 bg-slate-900/50 hover:bg-slate-800 border border-emerald-500/30 rounded-lg transition-colors flex items-center gap-2">
+             <i data-lucide="heart" class="w-4 h-4"></i> Make a Donation
+           </a>
+           <a href="https://www.saucerswap.finance/swap/HBAR/0.0.10136204" target="_blank" class="px-4 py-2 text-sm font-medium bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors flex items-center gap-2">
+             <i data-lucide="external-link" class="w-4 h-4"></i> Buy NCHAIN
+           </a>
+        </div>
+      </div>
+
+      <p id="stakeWalletInfo" class="text-sm text-blue-400 mb-6 font-medium"></p>
+
+      <!-- Simulation Card -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-xl max-w-2xl mx-auto">
+        <h3 class="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-4">Yield Calculator</h3>
+        
+        <div class="space-y-6">
+          <div>
+            <label class="block text-slate-300 text-sm font-semibold mb-2">Amount to Stake (NUTRI)</label>
+            <div class="relative">
+              <span class="absolute left-3 top-3 text-slate-500">NUTRI</span>
+              <input id="stakeAmount" type="number" min="1" step="1"
+                class="w-full pl-16 pr-4 py-3 rounded-lg bg-slate-950 border border-slate-700 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                placeholder="Ex: 1000" />
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-slate-300 text-sm font-semibold mb-2">Duration (Years)</label>
+            <input id="stakeYears" type="number" min="0.1" step="0.1" value="1"
+              class="w-full px-4 py-3 rounded-lg bg-slate-950 border border-slate-700 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+              placeholder="Ex: 1" />
+          </div>
+
+          <button id="simulateStake" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg shadow-lg transform transition hover:scale-[1.02] flex items-center justify-center gap-2">
+            <i data-lucide="calculator" class="w-5 h-5"></i>
+            Simulate Yield
+          </button>
+
+          <!-- Result -->
+          <div id="stakeResult" class="mt-6 p-4 rounded-lg bg-slate-800 border border-slate-700 hidden text-center">
+            <!-- JS injectera le résultat ici -->
+          </div>
+        </div>
+      </div>
+
+    </main>
   </div>
 
+  <!-- SCRIPTS -->
   <script>
     const APY = 0.0725;
 
@@ -83,20 +143,24 @@
       btn.addEventListener('click', () => {
         const amount = Number(amountEl.value);
         const years = Number(yearsEl.value);
+        
+        resultEl.classList.remove('hidden'); // Afficher la zone
+
         if (!amount || amount <= 0 || !years || years <= 0) {
           resultEl.textContent = "Please enter a valid amount and duration.";
-          resultEl.className = "text-[11px] text-red-400 mt-1";
+          resultEl.className = "mt-6 p-4 rounded-lg bg-red-900/20 border border-red-800 text-red-400 text-center";
           return;
         }
 
         const final = amount * Math.pow(1 + APY, years);
         const gain = final - amount;
 
-        resultEl.textContent =
-          `After ${years.toFixed(2)} years at 7.25% APY, ` +
-          `your ${amount.toLocaleString('en-US')} NUTRI would become approximately ` +
-          `${final.toLocaleString('en-US')} NUTRI (a gain of +${gain.toLocaleString('en-US')} NUTRI).`;
-        resultEl.className = "text-[11px] text-emerald-400 mt-1";
+        resultEl.innerHTML = `
+          <p class="text-slate-400 text-sm">After <strong>${years} years</strong> at 7.25% APY :</p>
+          <p class="text-2xl font-bold text-white mt-1">${final.toLocaleString('en-US', {maximumFractionDigits: 0})} NUTRI</p>
+          <p class="text-emerald-400 text-sm font-semibold mt-1">(+${gain.toLocaleString('en-US', {maximumFractionDigits: 0})} NUTRI)</p>
+        `;
+        resultEl.className = "mt-6 p-4 rounded-lg bg-emerald-900/20 border border-emerald-800 text-center";
       });
     }
 
@@ -106,15 +170,13 @@
 
       const amountParam = getQueryParam("amount");
       const accountParam = getQueryParam("account");
-
       const amountEl = document.getElementById('stakeAmount');
-      if (amountEl && amountParam) {
-        amountEl.value = amountParam;
-      }
+      
+      if (amountEl && amountParam) amountEl.value = amountParam;
 
       const walletInfo = document.getElementById('stakeWalletInfo');
       if (walletInfo && accountParam) {
-        walletInfo.textContent = `Simulating staking for Hedera account ${accountParam}.`;
+        walletInfo.innerHTML = `<i data-lucide="wallet" class="w-4 h-4 mr-2"></i> Simulation for Hedera account: <span class="text-white">${accountParam}</span>`;
       }
     });
   </script>

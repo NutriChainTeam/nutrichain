@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <title>NutriChain - Admin Validation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-950 text-slate-200 font-sans antialiased">
+
+  <div class="flex min-h-screen">
+    
+    <!-- SIDEBAR (Desktop) -->
+    <aside class="hidden lg:flex w-64 flex-col fixed inset-y-0 bg-slate-900 border-r border-slate-800 z-40">
+      <div class="p-6 flex items-center gap-3 border-b border-slate-800/50">
+        <!-- LOGO IPFS -->
+        <img src="https://ipfs.io/ipfs/bafkreic4gnxl4l6lv7ycksqffykbpfq6ycvdqzuzzsn6q7wc4q5tzbmbsu" alt="NutriChain Logo" class="h-10 w-10 rounded-full shadow-lg ring-2 ring-emerald-500">
+        <div>
+          <h1 class="font-bold text-xl text-white tracking-tight">NutriChain</h1>
+          <p class="text-xs text-emerald-400 font-medium tracking-wide">DECENTRALIZED AID</p>
+        </div>
+      </div>
+
+      <nav class="flex-1 p-4 space-y-1 mt-2">
+        <a href="/" class="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+        </a>
+        <a href="/admin" class="flex items-center gap-3 px-3 py-2.5 bg-emerald-500/10 text-emerald-400 rounded-lg font-medium transition-colors border border-emerald-500/20">
+          <i data-lucide="check" class="w-5 h-5"></i> Admin / Validation
+        </a>
+        <a href="/governance" class="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+          <i data-lucide="vote" class="w-5 h-5"></i> Governance
+        </a>
+      </nav>
+
+      <div class="p-4 border-t border-slate-800/50 bg-slate-900/50">
+        <div class="bg-slate-800/80 rounded-lg p-3 border border-slate-700/50">
+          <p class="text-xs text-slate-400 mb-1">System Status</p>
+          <div class="flex items-center gap-2">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="text-xs font-medium text-emerald-400">Mainnet Active</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8 bg-slate-950">
+      
+      <!-- Top Bar -->
+      <div class="hidden lg:flex justify-between items-center mb-8">
+        <div>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Field Validation</h2>
+          <p class="text-slate-400 text-sm mt-1">Verify donations and impact proofs.</p>
+        </div>
+        <div class="flex gap-4">
+          <div class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 flex items-center gap-2">
+            <span class="text-emerald-400 text-xl font-bold">12</span>
+            <span class="text-sm text-slate-400">To validate</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Requests Table -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl mb-8">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-white">Pending Donation Requests</h3>
+          <button class="text-sm text-emerald-400 hover:text-emerald-300">See all</button>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="text-slate-400 border-b border-slate-800">
+                <th class="py-3 px-4">ID</th>
+                <th class="py-3 px-4">Canteen / Project</th>
+                <th class="py-3 px-4">Region</th>
+                <th class="py-3 px-4">Amount</th>
+                <th class="py-3 px-4">Proofs</th>
+                <th class="py-3 px-4">Validators</th>
+                <th class="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm">
+              <!-- Row 1 -->
+              <tr class="border-b border-slate-800 hover:bg-slate-800/40 transition-colors">
+                <td class="py-4 px-4 text-slate-500">#1024</td>
+                <td class="py-4 px-4 font-medium text-white">Cantine Solidaire Dakar</td>
+                <td class="py-4 px-4">Senegal (DKR)</td>
+                <td class="py-4 px-4 text-emerald-400">5,000 NUTRI</td>
+                <td class="py-4 px-4">
+                  <a href="#" class="text-blue-400 hover:underline"><i data-lucide="image" class="w-4 h-4"></i> 3 Photos</a>
+                </td>
+                <td class="py-4 px-4">
+                  <div class="flex -space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs" title="Validator A">A</div>
+                    <div class="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center text-xs border border-slate-800">?</div>
+                  </div>
+                </td>
+                <td class="py-4 px-4 text-right flex justify-end gap-2">
+                  <button class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded hover:bg-green-600 transition">Approve</button>
+                  <button class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition">Reject</button>
+                </td>
+              </tr>
+
+              <!-- Row 2 -->
+              <tr class="border-b border-slate-800 hover:bg-slate-800/40 transition-colors">
+                <td class="py-4 px-4 text-slate-500">#1025</td>
+                <td class="py-4 px-4 font-medium text-white">École Primaire Bamako</td>
+                <td class="py-4 px-4">Mali (BKO)</td>
+                <td class="py-4 px-4 text-emerald-400">2,500 NUTRI</td>
+                <td class="py-4 px-4">
+                  <span class="text-slate-500 italic">Pending...</span>
+                </td>
+                <td class="py-4 px-4">
+                  <div class="flex -space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center text-xs">?</div>
+                  </div>
+                </td>
+                <td class="py-4 px-4 text-right flex justify-end gap-2">
+                  <button class="bg-slate-600 text-slate-300 px-3 py-1 rounded cursor-not-allowed">Pending</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Field Reports Grid -->
+      <h3 class="text-xl font-semibold text-white mb-4">Recent Field Reports</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Report 1 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl">
+          <div class="h-32 bg-slate-800 rounded mb-3 flex items-center justify-center text-slate-500">
+            <i data-lucide="image" class="w-8 h-8"></i>
+          </div>
+          <h4 class="font-bold text-white">Meal Distribution - Dakar</h4>
+          <p class="text-xs text-slate-400 mb-3">Verified by @MoussaDiop on 20/12/2025</p>
+          <div class="flex justify-between items-center">
+            <span class="bg-emerald-900 text-emerald-300 px-3 py-1 rounded-full text-xs font-bold border border-emerald-700">Verified</span>
+            <button class="text-sm text-emerald-400">Details</button>
+          </div>
+        </div>
+
+        <!-- Report 2 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl">
+          <div class="h-32 bg-slate-800 rounded mb-3 flex items-center justify-center text-slate-500">
+            <i data-lucide="video" class="w-8 h-8"></i>
+          </div>
+          <h4 class="font-bold text-white">Material Purchase - Abidjan</h4>
+          <p class="text-xs text-slate-400 mb-3">Submitted by @AssocEspoir</p>
+          <div class="flex justify-between items-center">
+            <span class="bg-yellow-900 text-yellow-300 px-3 py-1 rounded-full text-xs font-bold border border-yellow-700">Pending</span>
+            <button class="text-sm text-emerald-400">Verify</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script>
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  </script>
+</body>
+</html>
