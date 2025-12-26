@@ -4,9 +4,9 @@ import { mainnet } from "wagmi/chains";
 import { http } from "wagmi";
 import { createAppKit } from "@reown/appkit/react";
 
-const projectId = "c75338eb5c9eb1b462e8a9bd7229afdf";
+const projectId = "cf4c859325a68c116eb90b8ec51e07f2";
 
-// Crée la configuration wagmi
+// Configuration wagmi
 export const wagmiConfig = createConfig({
   chains: [mainnet],
   transports: {
@@ -14,7 +14,7 @@ export const wagmiConfig = createConfig({
   },
 });
 
-// Crée AppKit avec la configuration wagmi
+// Configuration Reown AppKit
 export const appKit = createAppKit({
   config: wagmiConfig,
   projectId,
@@ -22,7 +22,7 @@ export const appKit = createAppKit({
   metadata: {
     name: "NutriChain",
     description: "NutriChain dApp",
-    url: "http://app.nutrichain.com",,
+    url: "https://www.nutrichain.org",
     icons: ["https://avatars.githubusercontent.com/u/37784886"],
   },
 });

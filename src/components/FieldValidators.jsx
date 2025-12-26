@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 
 const Icon = {
   Shield: (props) => (
@@ -70,10 +70,36 @@ const validators = [
 ]
 
 export default function FieldValidators() {
-  const [selectedVideo, setSelectedVideo] = useState(null)
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [beneficiaryId, setBeneficiaryId] = useState('');
+  const [mealsCount, setMealsCount] = useState(1);
+  const [proofPhoto, setProofPhoto] = useState(null);
+  const [proofVideoUrl, setProofVideoUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError('');
+    setSuccess('');
+
+    // TODO : Ajouter ici la logique pour envoyer la preuve à Hedera
+    try {
+      // simulate validation (remplacer par appel réel à Hedera)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setSuccess(`Validation réussie pour ${mealsCount} repas, ID: ${beneficiaryId}`);
+    } catch (err) {
+      setError('Échec de la validation. Veuillez réessayer.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="p-6 bg-slate-950 min-h-screen text-white font-sans">
+      {/* Vitrine des agents */}
       <div className="mb-10 text-center">
         <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent mb-2">
           Nos Héros du Terrain
@@ -90,8 +116,8 @@ export default function FieldValidators() {
         <Stat icon={<Icon.Calendar />} value="24h" label="Délai moyen de preuve" color="purple" />
       </div>
 
-      {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Liste des agents */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
         {validators.map(v => (
           <div key={v.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-emerald-500/30 transition">
             <div className="relative h-48">
@@ -126,6 +152,68 @@ export default function FieldValidators() {
           </div>
         ))}
       </div>
+
+      {/* Formulaire de validation */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mt-12">
+        <h3 className="text-xl font-bold mb-4">Valider une distribution</h3>
+        <form onSubmit={handleSubmit} className="max-w-md mx-auto">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">ID du bénéficiaire (ou QR code)</label>
+            <input
+              type="text"
+              value={beneficiaryId}
+              onChange={(e) => setBeneficiaryId(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="Saisir l'ID ou scanner le QR"
+              required
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Nombre de repas</label>
+            <input
+              type="number"
+              value={mealsCount}
+              onChange={(e) => setMealsCount(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              min="1"
+              required
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Photo de preuve (facultatif)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setProofPhoto(e.target.files[0])}
+              className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Lien vidéo de preuve (facultatif)</label>
+            <input
+              type="url"
+              value={proofVideoUrl}
+              onChange={(e) => setProofVideoUrl(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="https://youtube.com/..."
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-bold transition disabled:opacity-70"
+          >
+            {isSubmitting ? 'Validation en cours...' : 'Valider la distribution'}
+          </button>
+
+          {error && <p className="mt-4 text-red-400 text-center">{error}</p>}
+          {success && <p className="mt-4 text-emerald-400 text-center">{success}</p>}
+        </form>
+      </div>
     </div>
   )
 }
@@ -143,4 +231,3 @@ function Stat({ icon, value, label, color }) {
     </div>
   )
 }
-
