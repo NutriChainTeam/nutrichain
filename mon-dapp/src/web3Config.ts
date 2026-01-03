@@ -40,6 +40,7 @@ export const wagmiAdapter = new WagmiAdapter({
   projectId
 })
 
+// ... (reste du code identique)
 export const appKit = createAppKit({
   adapters: [wagmiAdapter],
   networks,
@@ -48,7 +49,7 @@ export const appKit = createAppKit({
   metadata: {
     name: 'NutriChain DApp',
     description: 'Nutrition-powered blockchain rewards',
-    url: 'https://nutrichain.com',
+    url: 'https://www.nutrichain.org', // <--- CHANGEZ CECI ICI
     icons: ['https://ipfs.io/ipfs/bafkreib62hwjjjajciix7mdzb4eygsxfkjr3ryl3mgytn3iusnuvi5wbji']
   }
 })
