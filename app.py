@@ -433,9 +433,6 @@ def donate_page():
 def stake_page():
     return render_template("stake.html")
 
-@app.route("/governance")
-def governance_page():
-    return render_template("governance.html")
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -575,6 +572,9 @@ def hashpack_connect():
         return jsonify({"error": "Database error"}), 500
 
 @app.route("/")
+#@app.route("/validators")
+#@app.route("/validators/")
+@app.route("/dashboard")
 def index():
     treasury_id = "0.0.10128148"
     return render_template("dashboard.html", treasury_id=treasury_id)

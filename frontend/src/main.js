@@ -17,7 +17,7 @@ async function initWallet() {
   console.log("INIT WALLET...");
 
   dAppConnector = new DAppConnector(
-    "c75338eb5c9eb1b462e8a9bd7229afdf", // remplace par ton vrai projectId
+    "cf4c859325a68c116eb90b8ec51e07f2", // remplace par ton vrai projectId
     Object.values(HederaJsonRpcMethod),
     [HederaSessionEvent.ChainChanged, HederaSessionEvent.AccountsChanged],
     [HederaChainId.Testnet, HederaChainId.Mainnet]

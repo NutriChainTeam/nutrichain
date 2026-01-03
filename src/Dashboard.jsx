@@ -1,3 +1,4 @@
+import BlockchainCertifier from './components/BlockchainCertifier';
 function Dashboard() {
   return (
     <div className="flex min-h-screen">
